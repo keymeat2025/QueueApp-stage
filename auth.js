@@ -1,3 +1,4 @@
+
 // ============================================================================
 // QUEUEAPP - AUTH.JS
 // Authentication & User Management Module
