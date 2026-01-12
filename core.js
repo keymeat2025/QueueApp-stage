@@ -1,3 +1,4 @@
+
 // ============================================================================
 // QUEUEAPP - CORE.JS
 // Foundation Layer: Firebase, Database, Utilities, Routing
