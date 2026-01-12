@@ -1,4 +1,3 @@
-
 // ============================================================================
 // QUEUEAPP - DISPLAY.JS (ENHANCED WITH UI TOGGLES)
 // Live Display Screen & QR Controls Module with Customizable UI Options
@@ -22,7 +21,8 @@ const DEFAULT_DISPLAY_SETTINGS = {
     highlightTop3: true,        // Highlight first 3 waiting customers
     cardStyle: 'enhanced',      // 'simple' or 'enhanced' (nested boxes)
     tableStyle: 'gradient',     // 'simple' or 'gradient' (separate box)
-    waitingLayout: 'list'       // 'list' or 'grid'
+    waitingLayout: 'list',      // 'list' or 'grid'
+    servingDisplayCount: 10     // Number of "NOW SERVING" cards to display (1-20)
   }
 };
 
@@ -81,7 +81,11 @@ async function showDisplay(rid, customerQueueNumber) {
     const waitingQueue = restaurant.queue.filter(q => q.status === 'waiting');
     const allocatedQueue = restaurant.queue.filter(q => q.status === 'allocated');
     
-    const maxCards = window.innerWidth < 768 ? 5 : window.innerWidth < 1024 ? 7 : 10;
+    // Get current display settings
+    const currentSettings = getDisplaySettings(rid);
+    
+    // Use restaurant owner's custom serving display count (default: 10)
+    const maxCards = currentSettings.ui.servingDisplayCount || 10;
     const justCalled = allocatedQueue.slice(-maxCards);
     
     // Filter waiting queue if customer-specific view
@@ -96,9 +100,6 @@ async function showDisplay(rid, customerQueueNumber) {
     const nameFontSize = justCalled.length <= 3 ? 'clamp(2rem,6vw,4rem)' : justCalled.length <= 6 ? 'clamp(1.75rem,5vw,3.5rem)' : 'clamp(1.5rem,4vw,3rem)';
     const tableFontSize = justCalled.length <= 3 ? 'clamp(3rem,8vw,6rem)' : justCalled.length <= 6 ? 'clamp(2.5rem,7vw,5rem)' : 'clamp(2rem,6vw,4rem)';
     const guestFontSize = justCalled.length <= 3 ? 'clamp(1.5rem,4vw,3rem)' : justCalled.length <= 6 ? 'clamp(1.25rem,3.5vw,2.5rem)' : 'clamp(1rem,3vw,2rem)';
-    
-    // Refresh current settings (might have changed)
-    const currentSettings = getDisplaySettings(rid);
     
     // Generate NOW SERVING cards based on card style setting
     const generateNowServingCard = (allocated, isMyTurn) => {
@@ -252,6 +253,17 @@ async function showDisplay(rid, customerQueueNumber) {
               
               <hr style="border:none;border-top:1px solid rgba(255,255,255,.2);margin:1rem 0">
               
+              <!-- SERVING DISPLAY COUNT -->
+              <div class="control-group qr-size-control">
+                <label>Serving Display: <span id="servingCountLabel">${currentSettings.ui.servingDisplayCount || 10}</span> cards</label>
+                <input type="range" class="qr-size-slider" id="servingCountSlider" min="1" max="20" value="${currentSettings.ui.servingDisplayCount || 10}" step="1" oninput="updateServingCount('${rid}', this.value)">
+                <div style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.5rem">
+                  Show last <strong>${currentSettings.ui.servingDisplayCount || 10}</strong> served customers
+                </div>
+              </div>
+              
+              <hr style="border:none;border-top:1px solid rgba(255,255,255,.2);margin:1rem 0">
+              
               <!-- UI CUSTOMIZATION OPTIONS -->
               <div class="control-group">
                 <label style="font-size:.875rem;display:block;margin-bottom:.75rem;color:#fbbf24;font-weight:700">📊 UI Options:</label>
@@ -352,6 +364,22 @@ async function showDisplay(rid, customerQueueNumber) {
             <div style="font-size:clamp(1rem,2vw,1.25rem);color:#10b981;margin-top:.5rem">🔥 Live</div>
           </div>
           
+          ${currentSettings.ui.showStats ? `
+            <div class="card mb" style="background:rgba(168,85,247,.2);border:3px solid #9333ea;padding:clamp(1.5rem,3vw,3rem)">
+              <h2 class="text-center" style="color:#c084fc;margin-bottom:clamp(1rem,2vw,2rem);font-size:clamp(1.75rem,4vw,3rem)">📊 Stats</h2>
+              <div class="grid grid-2" style="gap:clamp(1rem,2vw,2rem)">
+                <div class="card text-center" style="background:rgba(255,255,255,.1);padding:clamp(1.25rem,2.5vw,2rem)">
+                  <div style="font-size:clamp(3.5rem,9vw,7rem);font-weight:900;color:var(--primary)">${waitingQueue.length}</div>
+                  <div style="font-size:clamp(1.1rem,2vw,1.5rem);color:white;margin-top:.5rem">Waiting</div>
+                </div>
+                <div class="card text-center" style="background:rgba(255,255,255,.1);padding:clamp(1.25rem,2.5vw,2rem)">
+                  <div style="font-size:clamp(3.5rem,9vw,7rem);font-weight:900;color:var(--success)">${allocatedQueue.length}</div>
+                  <div style="font-size:clamp(1.1rem,2vw,1.5rem);color:white;margin-top:.5rem">Seated</div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+          
           ${justCalled.length > 0 ? `
             <div class="card mb" style="background:linear-gradient(135deg,rgba(22,163,74,.9),rgba(21,128,61,.9));border:4px solid var(--success);padding:clamp(2rem,4vw,4rem)">
               <h2 class="text-center" style="font-size:clamp(2.5rem,6vw,5rem);margin-bottom:clamp(1rem,2vw,2rem)">
@@ -374,22 +402,6 @@ async function showDisplay(rid, customerQueueNumber) {
               <p style="font-size:clamp(1.25rem,3vw,2rem);color:rgba(255,255,255,.7);margin-top:1rem">
                 All customers served!
               </p>
-            </div>
-          ` : ''}
-          
-          ${currentSettings.ui.showStats ? `
-            <div class="card" style="background:rgba(168,85,247,.2);border:3px solid #9333ea;padding:clamp(1.5rem,3vw,3rem)">
-              <h2 class="text-center" style="color:#c084fc;margin-bottom:clamp(1rem,2vw,2rem);font-size:clamp(1.75rem,4vw,3rem)">📊 Stats</h2>
-              <div class="grid grid-2" style="gap:clamp(1rem,2vw,2rem)">
-                <div class="card text-center" style="background:rgba(255,255,255,.1);padding:clamp(1.25rem,2.5vw,2rem)">
-                  <div style="font-size:clamp(3.5rem,9vw,7rem);font-weight:900;color:var(--primary)">${waitingQueue.length}</div>
-                  <div style="font-size:clamp(1.1rem,2vw,1.5rem);color:white;margin-top:.5rem">Waiting</div>
-                </div>
-                <div class="card text-center" style="background:rgba(255,255,255,.1);padding:clamp(1.25rem,2.5vw,2rem)">
-                  <div style="font-size:clamp(3.5rem,9vw,7rem);font-weight:900;color:var(--success)">${allocatedQueue.length}</div>
-                  <div style="font-size:clamp(1.1rem,2vw,1.5rem);color:white;margin-top:.5rem">Seated</div>
-                </div>
-              </div>
             </div>
           ` : ''}
         </div>
@@ -457,6 +469,20 @@ const updateQRSize = (rid, size) => {
   const settings = getDisplaySettings(rid);
   settings.qr.scale = scale;
   saveDisplaySettings(rid, settings);
+};
+
+const updateServingCount = (rid, count) => {
+  const label = document.getElementById('servingCountLabel');
+  
+  if (label) label.textContent = count;
+  
+  const settings = getDisplaySettings(rid);
+  settings.ui.servingDisplayCount = parseInt(count);
+  saveDisplaySettings(rid, settings);
+  
+  console.log(`✅ Serving display count changed to: ${count} cards`);
+  
+  // Note: Display will auto-refresh via Firebase listener
 };
 
 const toggleQRVisibility = (rid) => {
@@ -603,6 +629,7 @@ window.showDisplay = showDisplay;
 window.toggleQRControls = toggleQRControls;
 window.setQRPosition = setQRPosition;
 window.updateQRSize = updateQRSize;
+window.updateServingCount = updateServingCount;
 window.toggleQRVisibility = toggleQRVisibility;
 window.toggleUISetting = toggleUISetting;
 window.setUIOption = setUIOption;
