@@ -1,8 +1,8 @@
-
 // ============================================================================
-// QUEUEAPP - ADMIN.JS
+// QUEUEAPP - ADMIN.JS (WITH EXPIRY PI CHART)
 // Restaurant & Platform Admin Module
 // Includes: Admin dashboards, payments, cleanup, QR poster, upgrade modals
+// NEW: Circular Progress Chart for Days Remaining
 // ============================================================================
 
 // ============================================================================
@@ -87,6 +87,163 @@ async function showRestaurantAdmin(rid) {
       `;
     }
     
+    // ===== 📊 PREMIUM EXPIRY PI CHART =====
+    let premiumAlert = '';
+    if (currentPlan === 'premium' && planStatus === 'active') {
+      if (restaurant.planExpiryDate) {
+        const now = Date.now();
+        const expiryDate = restaurant.planExpiryDate;
+        const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+        const totalDays = 30; // Assuming 30-day subscription
+        const daysElapsed = totalDays - daysRemaining;
+        const percentageRemaining = Math.max(0, Math.min(100, (daysRemaining / totalDays) * 100));
+        const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        
+        if (daysRemaining > 0) {
+          // Active Premium - Show PI CHART
+          let alertColor = 'success';
+          let alertBg = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+          let chartColor = '#16a34a';
+          let alertEmoji = '✅';
+          let alertTitle = 'Premium Plan Active';
+          
+          // Change colors based on days remaining
+          if (daysRemaining <= 3) {
+            alertColor = 'danger';
+            alertBg = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
+            chartColor = '#dc2626';
+            alertEmoji = '⚠️';
+            alertTitle = 'Premium Expiring Soon!';
+          } else if (daysRemaining <= 7) {
+            alertColor = 'warning';
+            alertBg = 'linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%)';
+            chartColor = '#ca8a04';
+            alertEmoji = '⏰';
+          }
+          
+          premiumAlert = `
+            <div class="card mb" style="background:${alertBg};border:3px solid ${chartColor}">
+              <div style="display:flex;align-items:center;gap:clamp(1rem,3vw,2rem);flex-wrap:wrap">
+                
+                <!-- PI CHART -->
+                <div style="position:relative;width:clamp(120px,20vw,160px);height:clamp(120px,20vw,160px);flex-shrink:0">
+                  <svg width="100%" height="100%" viewBox="0 0 200 200" style="transform:rotate(-90deg)">
+                    <!-- Background circle -->
+                    <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="20"/>
+                    <!-- Progress circle -->
+                    <circle cx="100" cy="100" r="80" fill="none" stroke="${chartColor}" stroke-width="20" 
+                            stroke-dasharray="${(percentageRemaining / 100) * 502.65} 502.65" 
+                            stroke-linecap="round"
+                            style="transition:stroke-dasharray 1s ease"/>
+                  </svg>
+                  <!-- Center text -->
+                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+                    <div style="font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;color:${chartColor};line-height:1">${daysRemaining}</div>
+                    <div style="font-size:clamp(.625rem,1.5vw,.75rem);color:var(--gray-600);font-weight:600;margin-top:.25rem">DAYS</div>
+                  </div>
+                </div>
+                
+                <!-- Info Section -->
+                <div style="flex:1;min-width:200px">
+                  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+                    <div style="font-size:clamp(1.5rem,3vw,2rem)">${alertEmoji}</div>
+                    <h3 style="margin:0;font-size:clamp(1rem,2.5vw,1.5rem);color:var(--gray-900)">${alertTitle}</h3>
+                  </div>
+                  
+                  <div style="background:white;padding:1rem;border-radius:.75rem;margin-bottom:1rem">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:1rem">
+                      <div>
+                        <div style="font-size:clamp(.625rem,1.5vw,.75rem);color:var(--gray-600);font-weight:600;margin-bottom:.25rem">DAYS LEFT</div>
+                        <div style="font-size:clamp(1.25rem,3vw,1.75rem);font-weight:900;color:${chartColor}">${daysRemaining}</div>
+                      </div>
+                      <div>
+                        <div style="font-size:clamp(.625rem,1.5vw,.75rem);color:var(--gray-600);font-weight:600;margin-bottom:.25rem">DAYS USED</div>
+                        <div style="font-size:clamp(1.25rem,3vw,1.75rem);font-weight:900;color:var(--gray-500)">${daysElapsed}</div>
+                      </div>
+                      <div>
+                        <div style="font-size:clamp(.625rem,1.5vw,.75rem);color:var(--gray-600);font-weight:600;margin-bottom:.25rem">TOTAL DAYS</div>
+                        <div style="font-size:clamp(1.25rem,3vw,1.75rem);font-weight:900;color:var(--gray-700)">${totalDays}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p style="font-size:clamp(.75rem,1.5vw,.875rem);color:var(--gray-700);margin:0">
+                    <strong>Expires:</strong> ${expiryDateFormatted}<br>
+                    <strong>Benefits:</strong> Unlimited customers • Auto-cleanup • Analytics
+                  </p>
+                  
+                  ${daysRemaining <= 7 ? `
+                    <button onclick="navigate('/pricing')" class="btn btn-primary" style="margin-top:1rem;width:100%">
+                      🔄 Renew Premium Now
+                    </button>
+                  ` : ''}
+                </div>
+                
+              </div>
+            </div>
+          `;
+        } else {
+          // Expired Premium
+          const daysExpired = Math.abs(daysRemaining);
+          premiumAlert = `
+            <div class="card mb" style="background:linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);border:3px solid #dc2626">
+              <div style="display:flex;align-items:center;gap:clamp(1rem,3vw,2rem);flex-wrap:wrap">
+                
+                <!-- EXPIRED PI CHART -->
+                <div style="position:relative;width:clamp(120px,20vw,160px);height:clamp(120px,20vw,160px);flex-shrink:0">
+                  <svg width="100%" height="100%" viewBox="0 0 200 200" style="transform:rotate(-90deg)">
+                    <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(220,38,38,0.2)" stroke-width="20"/>
+                  </svg>
+                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+                    <div style="font-size:clamp(2rem,5vw,3rem);line-height:1">❌</div>
+                    <div style="font-size:clamp(.625rem,1.5vw,.75rem);color:var(--danger);font-weight:700;margin-top:.5rem">EXPIRED</div>
+                  </div>
+                </div>
+                
+                <!-- Expired Info -->
+                <div style="flex:1;min-width:200px">
+                  <h3 style="margin:0 0 .75rem 0;font-size:clamp(1rem,2.5vw,1.5rem);color:#dc2626">Premium Subscription Expired</h3>
+                  
+                  <div style="background:white;padding:1rem;border-radius:.75rem;margin-bottom:1rem">
+                    <p style="font-size:clamp(.875rem,2vw,1rem);margin:0;color:var(--gray-700)">
+                      Your Premium plan expired <strong style="color:#dc2626">${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago</strong> on <strong>${expiryDateFormatted}</strong>
+                    </p>
+                  </div>
+                  
+                  <p style="font-size:clamp(.75rem,1.5vw,.875rem);color:var(--gray-700);margin:0 0 1rem 0">
+                    Renew now to restore: Unlimited customers • Analytics • Auto-cleanup
+                  </p>
+                  
+                  <button onclick="navigate('/pricing')" class="btn btn-danger" style="width:100%;font-size:clamp(.875rem,2vw,1rem);padding:clamp(.75rem,2vw,1rem)">
+                    ⚡ Renew Premium Now
+                  </button>
+                </div>
+                
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        // Premium without expiry date (legacy/lifetime)
+        premiumAlert = `
+          <div class="alert alert-success mb">
+            <div style="display:flex;align-items:center;gap:clamp(.75rem,1.5vw,1rem);flex-wrap:wrap">
+              <div style="font-size:clamp(1.5rem,4vw,2rem)">✅</div>
+              <div style="flex:1">
+                <p style="font-weight:700;margin-bottom:.25rem;font-size:clamp(.875rem,2vw,1rem)">Premium Plan Active</p>
+                <p style="font-size:clamp(.75rem,1.5vw,.875rem);margin:0">Enjoy unlimited customers & auto-cleanup!</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+    // ===== END PREMIUM EXPIRY PI CHART =====
+    
     render(`
       <div style="min-height:100vh;background:var(--gray-100);padding:clamp(1rem,3vw,2rem)">
         <div class="container">
@@ -139,17 +296,7 @@ async function showRestaurantAdmin(rid) {
             </div>
           ` : ''}
           
-          ${currentPlan === 'premium' && planStatus === 'active' && restaurant.planExpiryDate && (restaurant.planExpiryDate - Date.now()) > 0 ? `
-            <div class="alert alert-success mb">
-              <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-                <div style="font-size:clamp(1.5rem,4vw,2rem)">✅</div>
-                <div style="flex:1">
-                  <p style="font-weight:700;margin-bottom:.25rem">Premium Plan Active</p>
-                  <p style="font-size:.875rem;margin:0">Enjoy unlimited customers! Plan expires on ${new Date(restaurant.planExpiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                </div>
-              </div>
-            </div>
-          ` : ''}
+          ${premiumAlert}
           
           ${cleanupAlert}
           
@@ -1044,3 +1191,4 @@ window.downloadQRPoster = downloadQRPoster;
 window.closePosterModal = closePosterModal;
 
 console.log('✅ QueueApp Admin Module Loaded');
+console.log('📊 Premium Expiry PI Chart: ENABLED');
