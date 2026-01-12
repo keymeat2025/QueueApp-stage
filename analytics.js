@@ -1,4 +1,3 @@
-
 // ============================================================================
 // QUEUEAPP - ANALYTICS MODULE (🔒 SECURED WITH PREMIUM ACCESS CONTROL)
 // Customer Data & Analytics Page - Premium Feature Only
@@ -33,7 +32,25 @@ function validatePremiumAccess(rid, functionName = 'analytics') {
         return false;
     }
     
-    console.log(`[SECURITY] ✅ Premium access granted for ${functionName}`);
+    // ===== 🔒 EXPIRY DATE VALIDATION =====
+    if (r.planExpiryDate) {
+        const now = Date.now();
+        const expiryDate = r.planExpiryDate;
+        
+        if (expiryDate < now) {
+            const daysExpired = Math.floor((now - expiryDate) / (1000 * 60 * 60 * 24));
+            console.warn(`[SECURITY] Blocked ${functionName} - Premium expired ${daysExpired} days ago`);
+            showPremiumAccessDenied(rid, `Premium subscription expired ${daysExpired} day${daysExpired > 1 ? 's' : ''} ago. Please renew to continue.`);
+            return false;
+        }
+        
+        // Log days remaining for monitoring
+        const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+        console.log(`[SECURITY] ✅ Premium access granted for ${functionName} (${daysRemaining} days remaining)`);
+    } else {
+        console.log(`[SECURITY] ✅ Premium access granted for ${functionName} (No expiry date set)`);
+    }
+    
     return true;
 }
 
