@@ -1,7 +1,7 @@
-
 // ============================================================================
-// QUEUEAPP - CORE.JS
+// QUEUEAPP - CORE.JS (UPDATED WITH EXPIRY LIFECYCLE)
 // Foundation Layer: Firebase, Database, Utilities, Routing
+// CHANGES: Added expiry snapshot tracking + dynamic limit enforcement
 // ============================================================================
 
 // ============================================================================
@@ -54,6 +54,46 @@ const FirebaseAdmin = {
     return auth.onAuthStateChanged(callback);
   }
 };
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Check if Premium plan is currently active (not expired)
+ */
+function isPremiumActive(restaurant) {
+  return restaurant.plan === 'premium'
+    && restaurant.planStatus === 'active'
+    && (!restaurant.planExpiryDate || restaurant.planExpiryDate > Date.now());
+}
+
+/**
+ * Calculate effective monthly limit based on plan status
+ */
+function calculateMonthlyLimit(restaurant, analytics) {
+  const now = Date.now();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  
+  // Check if Premium is currently active
+  if (isPremiumActive(restaurant)) {
+    return { limit: Infinity, display: 'unlimited' };
+  }
+  
+  // Check if Premium expired mid-month (freemium grace period)
+  if (restaurant.plan === 'premium' && restaurant.planExpiryDate) {
+    const expiryMonth = new Date(restaurant.planExpiryDate).toISOString().slice(0, 7);
+    
+    if (expiryMonth === currentMonth && analytics.customersAtExpiry !== undefined) {
+      // Expired this month: Base usage + 500 freemium
+      const freemiumLimit = analytics.customersAtExpiry + 500;
+      return { limit: freemiumLimit, display: freemiumLimit };
+    }
+  }
+  
+  // Free plan or new month after expiry
+  return { limit: 500, display: 500 };
+}
 
 // ============================================================================
 // FIREBASE DATABASE WRAPPER
@@ -115,7 +155,7 @@ const FirebaseDB = {
     }
   },
 
-  // Add customer to queue
+  // Add customer to queue (UPDATED WITH EXPIRY LOGIC)
   async addToQueue(rid, customer) {
     try {
       const restaurantRef = db.collection('restaurants').doc(rid);
@@ -128,6 +168,7 @@ const FirebaseDB = {
       const restaurant = doc.data();
       const currentMonth = new Date().toISOString().slice(0, 7);
       const today = new Date().toISOString().slice(0, 10);
+      const now = Date.now();
       
       // Initialize or get analytics
       let analytics = restaurant.analytics || {
@@ -147,11 +188,14 @@ const FirebaseDB = {
           archivedAt: new Date().toISOString()
         });
         
+        // Clear expiry snapshot on new month
         analytics = {
           currentMonth: currentMonth,
           customersThisMonth: 0,
           lastResetDate: today,
-          dailyStats: {}
+          dailyStats: {},
+          customersAtExpiry: undefined,
+          expiredAt: undefined
         };
         
         await restaurantRef.update({
@@ -160,14 +204,51 @@ const FirebaseDB = {
         });
       }
       
-      // Check free plan limit
-      if (restaurant.plan === 'free' && analytics.customersThisMonth >= 500) {
+      // ===== EXPIRY SNAPSHOT LOGIC =====
+      // Take snapshot when Premium expires (first customer after expiry)
+      if (restaurant.plan === 'premium' && 
+          restaurant.planExpiryDate && 
+          restaurant.planExpiryDate < now && 
+          analytics.customersAtExpiry === undefined) {
+        
+        // Check if expiry was this month
+        const expiryMonth = new Date(restaurant.planExpiryDate).toISOString().slice(0, 7);
+        if (expiryMonth === currentMonth) {
+          // Take snapshot of customers at expiry
+          analytics.customersAtExpiry = analytics.customersThisMonth;
+          analytics.expiredAt = restaurant.planExpiryDate;
+          
+          console.log(`[EXPIRY SNAPSHOT] ${rid}: ${analytics.customersAtExpiry} customers at expiry`);
+          
+          // Update snapshot in Firestore
+          await restaurantRef.update({
+            'analytics.customersAtExpiry': analytics.customersAtExpiry,
+            'analytics.expiredAt': analytics.expiredAt
+          });
+        }
+      }
+      
+      // ===== CALCULATE EFFECTIVE LIMIT =====
+      const { limit: effectiveLimit, display: displayLimit } = calculateMonthlyLimit(restaurant, analytics);
+      
+      // Check limit
+      if (analytics.customersThisMonth >= effectiveLimit) {
+        // Determine appropriate message
+        let message;
+        if (restaurant.plan === 'premium' && analytics.customersAtExpiry !== undefined) {
+          message = `Freemium limit reached (${analytics.customersAtExpiry} before expiry + 500 grace). Renew Premium for unlimited customers.`;
+        } else if (restaurant.plan === 'free') {
+          message = 'Monthly limit reached. Upgrade to Premium for unlimited customers.';
+        } else {
+          message = 'Monthly limit reached. Renew Premium for unlimited customers.';
+        }
+        
         return {
           success: false,
           error: 'LIMIT_REACHED',
-          message: 'Monthly limit reached. Upgrade to Premium.',
+          message: message,
           customersUsed: analytics.customersThisMonth,
-          limit: 500
+          limit: displayLimit
         };
       }
       
@@ -196,7 +277,7 @@ const FirebaseDB = {
         success: true,
         queueNumber: queueNumber,
         customersThisMonth: analytics.customersThisMonth,
-        limit: restaurant.plan === 'free' ? 500 : 'unlimited'
+        limit: displayLimit
       };
     } catch (err) {
       return { success: false, error: err.message };
@@ -312,7 +393,7 @@ const FirebaseDB = {
 };
 
 // ============================================================================
-// LOCAL STORAGE DATABASE (BACKUP)
+// LOCAL STORAGE DATABASE (BACKUP) - UPDATED
 // ============================================================================
 
 const DB = {
@@ -351,6 +432,7 @@ const DB = {
     
     const currentMonth = new Date().toISOString().slice(0, 7);
     const today = new Date().toISOString().slice(0, 10);
+    const now = Date.now();
     
     if (!restaurant.analytics) {
       restaurant.analytics = {
@@ -373,12 +455,30 @@ const DB = {
         currentMonth: currentMonth,
         customersThisMonth: 0,
         lastResetDate: today,
-        dailyStats: {}
+        dailyStats: {},
+        customersAtExpiry: undefined,
+        expiredAt: undefined
       };
     }
     
-    // Check free plan limit
-    if (restaurant.plan === 'free' && restaurant.analytics.customersThisMonth >= 500) {
+    // Take expiry snapshot
+    if (restaurant.plan === 'premium' && 
+        restaurant.planExpiryDate && 
+        restaurant.planExpiryDate < now && 
+        restaurant.analytics.customersAtExpiry === undefined) {
+      
+      const expiryMonth = new Date(restaurant.planExpiryDate).toISOString().slice(0, 7);
+      if (expiryMonth === currentMonth) {
+        restaurant.analytics.customersAtExpiry = restaurant.analytics.customersThisMonth;
+        restaurant.analytics.expiredAt = restaurant.planExpiryDate;
+      }
+    }
+    
+    // Calculate effective limit
+    const { limit: effectiveLimit } = calculateMonthlyLimit(restaurant, restaurant.analytics);
+    
+    // Check limit
+    if (restaurant.analytics.customersThisMonth >= effectiveLimit) {
       return null;
     }
     
@@ -572,6 +672,8 @@ window.db = db;
 window.FirebaseAdmin = FirebaseAdmin;
 window.FirebaseDB = FirebaseDB;
 window.DB = DB;
+window.isPremiumActive = isPremiumActive;
+window.calculateMonthlyLimit = calculateMonthlyLimit;
 window.checkInternet = checkInternet;
 window.getTodayQRCode = getTodayQRCode;
 window.generateQRCode = generateQRCode;
@@ -587,3 +689,4 @@ window.adminUnsubscribe = adminUnsubscribe;
 window.displayUnsubscribe = displayUnsubscribe;
 
 console.log('✅ QueueApp Core Module Loaded');
+console.log('✅ Expiry Lifecycle Logic: ENABLED');
