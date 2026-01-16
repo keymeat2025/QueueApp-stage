@@ -210,6 +210,7 @@ function showUpgradeModal(rid, result) {
 // ============================================================================
 
 // Show queue status for specific customer
+
 async function showQueueStatus(rid, queueNumber) {
   // Show loading
   render(`
@@ -223,50 +224,50 @@ async function showQueueStatus(rid, queueNumber) {
   
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  let restaurant = DB.restaurants[rid];
-  let myQueue = restaurant?.queue.find(q => q.queueNumber === queueNumber);
+  // Cleanup previous listener
+  if (window.statusUnsubscribe) {
+    window.statusUnsubscribe();
+  }
   
-  // If not found in localStorage, fetch from Firebase
-  if (!myQueue) {
-    const result = await FirebaseDB.getRestaurant(rid);
-    if (result.success) {
-      restaurant = result.data;
-      DB.restaurants[rid] = restaurant;
-      DB.save();
-      myQueue = restaurant.queue.find(q => q.queueNumber === queueNumber);
-    } else {
+  // Set up real-time Firebase listener
+  window.statusUnsubscribe = db.collection('restaurants').doc(rid).onSnapshot(doc => {
+    if (!doc.exists) {
       render(`
         <div class="container text-center" style="padding-top:4rem">
-          <h1>Restaurant Not Found</h1>
+          <h1 style="color:var(--danger)">Restaurant Not Found</h1>
           <button onclick="navigate('/')" class="btn btn-primary mt">Go Home</button>
         </div>
       `);
       return;
     }
-  }
-  
-  // If still not found
-  if (!myQueue) {
-    render(`
-      <div class="container text-center" style="padding-top:4rem">
-        <h1>Queue Number Not Found</h1>
-        <p style="color:var(--gray-600);margin:2rem 0">Queue #${queueNumber} not found. It may have been served or the queue was reset.</p>
-        <button onclick="navigate('/r/${rid}/join')" class="btn btn-primary mt">Join Queue Again</button>
-        <button onclick="navigate('/r/${rid}/display')" class="btn btn-secondary mt">View Display</button>
-      </div>
-    `);
-    return;
-  }
-  
-  // Customer is allocated a table
-  if (myQueue.status === 'allocated') {
-    const notificationKey = `allocated_${rid}_${queueNumber}`;
     
-    // Notify customer (only once)
-    if (!sessionStorage.getItem(notificationKey)) {
-      sessionStorage.setItem(notificationKey, 'true');
+    const restaurant = doc.data();
+    DB.restaurants[rid] = restaurant;
+    DB.save();
+    
+    const myQueue = restaurant.queue.find(q => q.queueNumber === queueNumber);
+    
+    // Queue number not found
+    if (!myQueue) {
+      render(`
+        <div class="container text-center" style="padding-top:4rem">
+          <h1>Queue Number Not Found</h1>
+          <p style="color:var(--gray-600);margin:2rem 0">Queue #${queueNumber} not found. It may have been served or the queue was reset.</p>
+          <button onclick="navigate('/r/${rid}/join')" class="btn btn-primary mt">Join Queue Again</button>
+          <button onclick="navigate('/r/${rid}/display')" class="btn btn-secondary mt">View Display</button>
+        </div>
+      `);
+      return;
+    }
+    
+    // Check allocation and trigger notification
+    const allocationKey = `allocated_${rid}_${queueNumber}`;
+    const wasAllocated = sessionStorage.getItem(allocationKey);
+    
+    if (myQueue.status === 'allocated' && !wasAllocated) {
+      sessionStorage.setItem(allocationKey, 'true');
       
-      // Vibrate if supported
+      // Vibrate
       if ('vibrate' in navigator) {
         navigator.vibrate([200, 100, 200, 100, 200, 100, 200]);
       }
@@ -278,45 +279,104 @@ async function showQueueStatus(rid, queueNumber) {
       } catch (e) {}
     }
     
-    render(`
-      <div style="min-height:100vh;background:var(--success);display:flex;align-items:center;justify-content:center;color:white;padding:2rem">
-        <div class="text-center" style="max-width:600px;margin:0 auto">
-          <h1 style="margin-bottom:2rem;font-size:clamp(1.5rem,5vw,2.5rem)">🎉 Table Ready!</h1>
+    const isAllocated = myQueue.status === 'allocated';
+    const statusText = isAllocated ? 'Seated' : 'Waiting';
+    const statusColor = isAllocated ? 'var(--success)' : 'var(--primary)';
+    const bgColor = isAllocated ? 'var(--success)' : 'var(--primary)';
+    
+    // Customer is allocated a table
+    if (isAllocated) {
+      render(`
+        <div style="min-height:100vh;background:${bgColor};position:relative">
           
-          <div class="card" style="background:white;color:var(--gray-900)">
-            <div style="font-size:clamp(6rem,20vw,12rem);font-weight:900;color:var(--success)">${myQueue.tableNo}</div>
-            <p style="font-size:clamp(1.25rem,4vw,2rem);margin-bottom:1rem">Queue: ${queueNumber}</p>
-            
-            <div style="padding:1rem;background:var(--gray-50);border-radius:1rem;margin-top:1rem">
-              <p style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:600;color:var(--gray-700)">${myQueue.name}</p>
-              <p style="font-size:clamp(.875rem,2vw,1rem);color:var(--gray-600)">${myQueue.guests} guest${myQueue.guests !== 1 ? 's' : ''}</p>
+          <!-- STICKY HEADER -->
+          <div style="position:sticky;top:0;background:rgba(0,0,0,.3);backdrop-filter:blur(10px);padding:1rem;z-index:100;border-bottom:3px solid white">
+            <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+              <div style="color:white">
+                <div style="font-size:clamp(1rem,2.5vw,1.5rem);font-weight:700">
+                  Status: ${statusText} | Queue: #${queueNumber}
+                </div>
+              </div>
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success)">
+                  📺 Display
+                </button>
+                <button onclick="navigate('/r/${rid}/menu')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success)">
+                  📖 Menu
+                </button>
+                <button onclick="window.history.back()" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem">
+                  ← Back
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- MAIN CONTENT -->
+          <div style="display:flex;align-items:center;justify-content:center;color:white;padding:2rem;min-height:calc(100vh - 100px)">
+            <div class="text-center" style="max-width:600px;margin:0 auto">
+              <div style="font-size:clamp(5rem,15vw,8rem);margin-bottom:2rem;animation:pulse 1.5s infinite">✅</div>
+              <h1 style="margin-bottom:2rem;font-size:clamp(2rem,6vw,3rem)">🎉 Table Ready!</h1>
+              
+              <div class="card" style="background:white;color:var(--gray-900)">
+                <div style="font-size:clamp(6rem,20vw,12rem);font-weight:900;color:var(--success);margin-bottom:1rem">${myQueue.tableNo}</div>
+                <p style="font-size:clamp(1.25rem,4vw,2rem);margin-bottom:1rem">Queue: ${queueNumber}</p>
+                
+                <div style="padding:1rem;background:var(--gray-50);border-radius:1rem;margin-top:1rem">
+                  <p style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:600;color:var(--gray-700)">${myQueue.name}</p>
+                  <p style="font-size:clamp(.875rem,2vw,1rem);color:var(--gray-600)">${myQueue.guests} guest${myQueue.guests !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    `);
-  } else {
-    // Customer still waiting
-    render(`
-      <div style="min-height:100vh;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;padding:2rem">
-        <div class="text-center" style="max-width:600px;margin:0 auto">
-          <h1 style="margin-bottom:2rem;font-size:clamp(1.5rem,5vw,2.5rem)">Still in Queue</h1>
+      `);
+    } else {
+      // Customer still waiting
+      render(`
+        <div style="min-height:100vh;background:${bgColor};position:relative">
           
-          <div class="card" style="background:white;color:var(--gray-900)">
-            <div style="font-size:clamp(6rem,20vw,12rem);font-weight:900;color:var(--primary)">${queueNumber}</div>
-            <p style="font-size:clamp(1.25rem,4vw,2rem);margin-bottom:1rem">Welcome!!</p>
-            
-            <div style="padding:1rem;background:var(--gray-50);border-radius:1rem;margin-top:1rem">
-              <p style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:600;color:var(--gray-700)">${myQueue.name}</p>
-              <p style="font-size:clamp(.875rem,2vw,1rem);color:var(--gray-600)">${myQueue.guests} guest${myQueue.guests !== 1 ? 's' : ''}</p>
+          <!-- STICKY HEADER -->
+          <div style="position:sticky;top:0;background:rgba(0,0,0,.3);backdrop-filter:blur(10px);padding:1rem;z-index:100;border-bottom:3px solid white">
+            <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+              <div style="color:white">
+                <div style="font-size:clamp(1rem,2.5vw,1.5rem);font-weight:700">
+                  Status: ${statusText} | Queue: #${queueNumber}
+                </div>
+              </div>
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--primary)">
+                  📺 Display
+                </button>
+                <button onclick="navigate('/r/${rid}/menu')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--primary)">
+                  📖 Menu
+                </button>
+                <button onclick="window.history.back()" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem">
+                  ← Back
+                </button>
+              </div>
             </div>
           </div>
           
-          <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-primary mt" style="background:white;color:var(--primary)">View Display</button>
+          <!-- MAIN CONTENT -->
+          <div style="display:flex;align-items:center;justify-content:center;color:white;padding:2rem;min-height:calc(100vh - 100px)">
+            <div class="text-center" style="max-width:600px;margin:0 auto">
+              <h1 style="margin-bottom:2rem;font-size:clamp(1.5rem,5vw,2.5rem)">Still in Queue</h1>
+              
+              <div class="card" style="background:white;color:var(--gray-900)">
+                <div style="font-size:clamp(6rem,20vw,12rem);font-weight:900;color:var(--primary);margin-bottom:1rem">${queueNumber}</div>
+                <p style="font-size:clamp(1.25rem,4vw,2rem);margin-bottom:1rem">Your Queue Number</p>
+                
+                <div style="padding:1rem;background:var(--gray-50);border-radius:1rem;margin-top:1rem">
+                  <p style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:600;color:var(--gray-700)">${myQueue.name}</p>
+                  <p style="font-size:clamp(.875rem,2vw,1rem);color:var(--gray-600)">${myQueue.guests} guest${myQueue.guests !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    `);
-  }
+      `);
+    }
+  });
 }
 
 // ============================================================================
