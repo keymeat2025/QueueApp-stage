@@ -1,8 +1,7 @@
-
 // ============================================================================
-// QUEUEAPP - CORE.JS (UPDATED WITH EXPIRY LIFECYCLE)
+// QUEUEAPP - CORE.JS (UPDATED WITH EXPIRY LIFECYCLE - UNDEFINED FIX APPLIED)
 // Foundation Layer: Firebase, Database, Utilities, Routing
-// CHANGES: Added expiry snapshot tracking + dynamic limit enforcement
+// CHANGES: Fixed undefined fields causing Firestore errors
 // ============================================================================
 
 // ============================================================================
@@ -156,7 +155,7 @@ const FirebaseDB = {
     }
   },
 
-  // Add customer to queue (UPDATED WITH EXPIRY LOGIC)
+  // Add customer to queue (FIXED - NO UNDEFINED FIELDS)
   async addToQueue(rid, customer) {
     try {
       const restaurantRef = db.collection('restaurants').doc(rid);
@@ -179,33 +178,45 @@ const FirebaseDB = {
         dailyStats: {}
       };
       
-      // Reset analytics if new month
+      // Reset analytics if new month (FIXED - NO UNDEFINED)
       if (analytics.currentMonth !== currentMonth) {
         const monthlyHistory = restaurant.monthlyHistory || [];
-        monthlyHistory.push({
+        
+        // Build history entry with only defined fields
+        const historyEntry = {
           month: analytics.currentMonth,
           totalCustomers: analytics.customersThisMonth,
           dailyStats: analytics.dailyStats,
           archivedAt: new Date().toISOString()
-        });
+        };
         
-        // Clear expiry snapshot on new month
+        // Only add optional fields if they exist
+        if (analytics.customersAtExpiry !== undefined) {
+          historyEntry.customersAtExpiry = analytics.customersAtExpiry;
+        }
+        if (analytics.expiredAt !== undefined) {
+          historyEntry.expiredAt = analytics.expiredAt;
+        }
+        
+        monthlyHistory.push(historyEntry);
+        
+        // Reset analytics WITHOUT undefined fields
         analytics = {
           currentMonth: currentMonth,
           customersThisMonth: 0,
           lastResetDate: today,
-          dailyStats: {},
-          customersAtExpiry: undefined,
-          expiredAt: undefined
+          dailyStats: {}
+          // Don't include customersAtExpiry or expiredAt - let them be absent
         };
         
+        // Update Firestore with clean data
         await restaurantRef.update({
           monthlyHistory: monthlyHistory,
           analytics: analytics
         });
       }
       
-      // ===== EXPIRY SNAPSHOT LOGIC =====
+      // ===== EXPIRY SNAPSHOT LOGIC (FIXED) =====
       // Take snapshot when Premium expires (first customer after expiry)
       if (restaurant.plan === 'premium' && 
           restaurant.planExpiryDate && 
@@ -221,11 +232,26 @@ const FirebaseDB = {
           
           console.log(`[EXPIRY SNAPSHOT] ${rid}: ${analytics.customersAtExpiry} customers at expiry`);
           
-          // Update snapshot in Firestore
-          await restaurantRef.update({
-            'analytics.customersAtExpiry': analytics.customersAtExpiry,
-            'analytics.expiredAt': analytics.expiredAt
-          });
+          // FIXED: Only update defined fields
+          try {
+            const snapshotUpdate = {};
+            
+            if (analytics.customersAtExpiry !== undefined) {
+              snapshotUpdate['analytics.customersAtExpiry'] = analytics.customersAtExpiry;
+            }
+            if (analytics.expiredAt !== undefined) {
+              snapshotUpdate['analytics.expiredAt'] = analytics.expiredAt;
+            }
+            
+            // Only update if there are fields to update
+            if (Object.keys(snapshotUpdate).length > 0) {
+              await restaurantRef.update(snapshotUpdate);
+              console.log(`[EXPIRY SNAPSHOT] Saved successfully`);
+            }
+          } catch (updateError) {
+            // Log error but don't fail the queue join
+            console.error(`[EXPIRY SNAPSHOT ERROR] ${rid}:`, updateError);
+          }
         }
       }
       
@@ -268,7 +294,7 @@ const FirebaseDB = {
       analytics.customersThisMonth += 1;
       analytics.dailyStats[today] = (analytics.dailyStats[today] || 0) + 1;
       
-      // Update Firestore
+      // FIXED: Update Firestore with clean analytics (no undefined)
       await restaurantRef.update({
         queue: firebase.firestore.FieldValue.arrayUnion(queueItem),
         analytics: analytics
@@ -281,6 +307,7 @@ const FirebaseDB = {
         limit: displayLimit
       };
     } catch (err) {
+      console.error('[ADD TO QUEUE ERROR]', err);
       return { success: false, error: err.message };
     }
   },
@@ -394,7 +421,7 @@ const FirebaseDB = {
 };
 
 // ============================================================================
-// LOCAL STORAGE DATABASE (BACKUP) - UPDATED
+// LOCAL STORAGE DATABASE (BACKUP) - FIXED
 // ============================================================================
 
 const DB = {
@@ -444,25 +471,35 @@ const DB = {
       };
     }
     
-    // Reset analytics if new month
+    // Reset analytics if new month (FIXED - NO UNDEFINED)
     if (restaurant.analytics.currentMonth !== currentMonth) {
       if (!restaurant.monthlyHistory) restaurant.monthlyHistory = [];
-      restaurant.monthlyHistory.push({
+      
+      // Build history entry with only defined fields
+      const historyEntry = {
         month: restaurant.analytics.currentMonth,
         totalCustomers: restaurant.analytics.customersThisMonth
-      });
+      };
       
+      if (restaurant.analytics.customersAtExpiry !== undefined) {
+        historyEntry.customersAtExpiry = restaurant.analytics.customersAtExpiry;
+      }
+      if (restaurant.analytics.expiredAt !== undefined) {
+        historyEntry.expiredAt = restaurant.analytics.expiredAt;
+      }
+      
+      restaurant.monthlyHistory.push(historyEntry);
+      
+      // Reset WITHOUT undefined fields
       restaurant.analytics = {
         currentMonth: currentMonth,
         customersThisMonth: 0,
         lastResetDate: today,
-        dailyStats: {},
-        customersAtExpiry: undefined,
-        expiredAt: undefined
+        dailyStats: {}
       };
     }
     
-    // Take expiry snapshot
+    // Take expiry snapshot (FIXED)
     if (restaurant.plan === 'premium' && 
         restaurant.planExpiryDate && 
         restaurant.planExpiryDate < now && 
@@ -691,3 +728,4 @@ window.displayUnsubscribe = displayUnsubscribe;
 
 console.log('✅ QueueApp Core Module Loaded');
 console.log('✅ Expiry Lifecycle Logic: ENABLED');
+console.log('✅ Undefined Fix: APPLIED');
