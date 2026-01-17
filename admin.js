@@ -839,8 +839,17 @@ async function submitPaymentProof(rid) {
   reader.onload = async (e) => {
     const internalTxnId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
     const restaurant = DB.restaurants[rid];
+
+    // NEW: Subscription tracking
+    const subscriptionId = getSubscriptionId(restaurant, rid);
+    const cycleNumber = getNextCycleNumber(restaurant);
+    const isRenewal = cycleNumber > 1;
     
     const paymentData = {
+      subscriptionId: subscriptionId,           // NEW
+      subscriptionCycleNumber: cycleNumber,     // NEW
+      isRenewal: isRenewal,                     // NEW
+      
       internalTransactionId: internalTxnId,
       utrNumber: transactionId,
       screenshot: e.target.result,
@@ -862,14 +871,45 @@ async function submitPaymentProof(rid) {
         action: 'payment_proof_uploaded',
         timestamp: new Date().toISOString(),
         by: 'restaurant_owner',
-        details: 'Payment proof submitted for verification'
+        details: isRenewal 
+          ? `Renewal payment submitted (Cycle #${cycleNumber})`
+          : 'Payment proof submitted for verification'
       }]
     };
     
     await FirebaseDB.savePaymentProof(rid, paymentData);
     DB.savePaymentProof(rid, paymentData);
+
+    // NEW: Update subscription tracking in Firebase
+    try {
+      const paymentHistory = restaurant.paymentHistory || [];
+      paymentHistory.push({
+        cycleNumber: cycleNumber,
+        transactionId: internalTxnId,
+        utrNumber: transactionId,
+        amount: 1999,
+        submittedAt: Date.now(),
+        status: 'pending'
+      });
+      
+      await db.collection('restaurants').doc(rid).update({
+        subscriptionId: subscriptionId,
+        subscriptionCycleNumber: cycleNumber,
+        paymentHistory: paymentHistory
+      });
+      
+      // Also update localStorage
+      DB.restaurants[rid].subscriptionId = subscriptionId;
+      DB.restaurants[rid].subscriptionCycleNumber = cycleNumber;
+      DB.restaurants[rid].paymentHistory = paymentHistory;
+      DB.save();
+    } catch (err) {
+      console.error('[Subscription Tracking] Error:', err);
+      // Don't fail the payment if subscription tracking fails
+    }
     
-    alert('✅ Submitted! Verification takes 2-24 hours.\n\nTransaction ID: ' + internalTxnId);
+    //alert('✅ Submitted! Verification takes 2-24 hours.\n\nTransaction ID: ' + internalTxnId);
+    alert(`✅ ${isRenewal ? 'Renewal' : 'Payment'} submitted!\n\nSubscription: ${subscriptionId}\nCycle: #${cycleNumber}\nTransaction: ${internalTxnId}\n\nVerification takes 2-24 hours.`);
     navigate(`/r/${rid}/admin`);
   };
   
