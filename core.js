@@ -25,6 +25,79 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================================
+// PLAN CONFIGURATION
+// ============================================================================
+
+const PLAN_CATALOG = {
+  // Current active plan - Change this single line to switch plans
+  ACTIVE_PLAN: 'intro_quarterly',
+  
+  PLANS: {
+    intro_quarterly: {
+      id: 'intro_quarterly_2026',
+      duration: 90,
+      price: 1999,
+      displayName: 'Quarterly Premium',
+      displayPrice: '₹1,999 for 3 months',
+      description: 'Limited time offer'
+    },
+    
+    monthly: {
+      id: 'monthly_standard',
+      duration: 30,
+      price: 1999,
+      displayName: 'Monthly Premium',
+      displayPrice: '₹1,999/month',
+      description: 'Standard monthly plan'
+    },
+    
+    quarterly: {
+      id: 'quarterly_standard',
+      duration: 90,
+      price: 5499,
+      displayName: 'Quarterly Premium',
+      displayPrice: '₹5,499/quarter',
+      description: 'Best value - 3 months'
+    },
+    
+    yearly: {
+      id: 'yearly_standard',
+      duration: 365,
+      price: 19999,
+      displayName: 'Yearly Premium',
+      displayPrice: '₹19,999/year',
+      description: 'Maximum savings'
+    }
+  }
+};
+
+// Get currently active plan
+const getActivePlan = () => {
+  return PLAN_CATALOG.PLANS[PLAN_CATALOG.ACTIVE_PLAN];
+};
+
+// Calculate total days with smart fallback
+const calculateTotalDays = (restaurant) => {
+  // If planDuration exists, use it
+  if (restaurant.planDuration) {
+    return restaurant.planDuration;
+  }
+  
+  // Calculate from existing timestamps
+  const start = restaurant.planStartDate || restaurant.uploadedTimestamp;
+  const expiry = restaurant.planExpiryDate;
+  
+  if (start && expiry) {
+    const calculatedDays = Math.ceil((expiry - start) / (1000 * 60 * 60 * 24));
+    return calculatedDays;
+  }
+  
+  // Final fallback - use active plan duration
+  return getActivePlan().duration;
+};
+
+
+// ============================================================================
 // FIREBASE ADMIN WRAPPER
 // ============================================================================
 
@@ -374,16 +447,22 @@ const FirebaseDB = {
     }
   },
 
+ 
   // Approve premium
   async approvePremium(rid, approvalData) {
     try {
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30);
+      const activePlan = getActivePlan();
+      const startDate = Date.now();
+      const expiryDate = startDate + (activePlan.duration * 24 * 60 * 60 * 1000);
       
       const updateData = {
         plan: 'premium',
         planStatus: 'active',
-        planExpiryDate: expiryDate.getTime()
+        planType: activePlan.id,
+        planDuration: activePlan.duration,
+        planPrice: activePlan.price,
+        planStartDate: startDate,
+        planExpiryDate: expiryDate
       };
       
       if (approvalData) {
@@ -569,11 +648,17 @@ const DB = {
   approvePremium(rid) {
     const restaurant = this.restaurants[rid];
     if (restaurant) {
+      const activePlan = getActivePlan();
+      const startDate = Date.now();
+      const expiryDate = startDate + (activePlan.duration * 24 * 60 * 60 * 1000);
+      
       restaurant.plan = 'premium';
       restaurant.planStatus = 'active';
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30);
-      restaurant.planExpiryDate = expiryDate.getTime();
+      restaurant.planType = activePlan.id;
+      restaurant.planDuration = activePlan.duration;
+      restaurant.planPrice = activePlan.price;
+      restaurant.planStartDate = startDate;
+      restaurant.planExpiryDate = expiryDate;
       this.save();
       return true;
     }
@@ -726,6 +811,10 @@ window.toggleMobileMenu = toggleMobileMenu;
 window.platformAdminListener = platformAdminListener;
 window.adminUnsubscribe = adminUnsubscribe;
 window.displayUnsubscribe = displayUnsubscribe;
+
+window.PLAN_CATALOG = PLAN_CATALOG;
+window.getActivePlan = getActivePlan;
+window.calculateTotalDays = calculateTotalDays;
 
 console.log('✅ QueueApp Core Module Loaded');
 console.log('✅ Expiry Lifecycle Logic: ENABLED');
