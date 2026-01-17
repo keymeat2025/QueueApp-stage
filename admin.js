@@ -94,8 +94,10 @@ async function showRestaurantAdmin(rid) {
         const now = Date.now();
         const expiryDate = restaurant.planExpiryDate;
         const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-        const totalDays = 30; // Assuming 30-day subscription
-        const daysElapsed = totalDays - daysRemaining;
+        //const totalDays = 30; // Assuming 30-day subscription
+        const totalDays = calculateTotalDays(restaurant);
+        //const daysElapsed = totalDays - daysRemaining;
+        const daysElapsed = Math.max(0, totalDays - daysRemaining);
         const percentageRemaining = Math.max(0, Math.min(100, (daysRemaining / totalDays) * 100));
         const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', { 
           year: 'numeric', 
