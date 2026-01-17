@@ -1,4 +1,3 @@
-
 // ============================================================================
 // QUEUEAPP - CORE.JS (UPDATED WITH EXPIRY LIFECYCLE - UNDEFINED FIX APPLIED)
 // Foundation Layer: Firebase, Database, Utilities, Routing
