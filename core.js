@@ -95,6 +95,29 @@ const calculateTotalDays = (restaurant) => {
   return getActivePlan().duration;
 };
 
+// Generate unique subscription ID
+const generateSubscriptionId = (restaurantId) => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substr(2, 6).toUpperCase();
+  return `SUB-${restaurantId}-${timestamp}-${random}`;
+};
+
+// Get or create subscription ID for restaurant
+const getSubscriptionId = (restaurant, rid) => {
+  // If already has subscription ID, return it
+  if (restaurant.subscriptionId) {
+    return restaurant.subscriptionId;
+  }
+  
+  // Generate new one for first time
+  return generateSubscriptionId(rid);
+};
+
+// Get next cycle number
+const getNextCycleNumber = (restaurant) => {
+  return (restaurant.subscriptionCycleNumber || 0) + 1;
+};
+
 
 // ============================================================================
 // FIREBASE ADMIN WRAPPER
@@ -814,6 +837,10 @@ window.displayUnsubscribe = displayUnsubscribe;
 window.PLAN_CATALOG = PLAN_CATALOG;
 window.getActivePlan = getActivePlan;
 window.calculateTotalDays = calculateTotalDays;
+
+window.generateSubscriptionId = generateSubscriptionId;
+window.getSubscriptionId = getSubscriptionId;
+window.getNextCycleNumber = getNextCycleNumber;
 
 console.log('✅ QueueApp Core Module Loaded');
 console.log('✅ Expiry Lifecycle Logic: ENABLED');
