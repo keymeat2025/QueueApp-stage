@@ -172,8 +172,10 @@ async function showRestaurantAdmin(rid) {
                       </div>
                     </div>
                   </div>
-                  
+       
                   <p style="font-size:clamp(.75rem,1.5vw,.875rem);color:var(--gray-700);margin:0">
+                    ${restaurant.subscriptionId ? `<strong>Subscription:</strong> ${restaurant.subscriptionId}<br>` : ''}
+                    ${restaurant.subscriptionCycleNumber ? `<strong>Renewal Cycle:</strong> #${restaurant.subscriptionCycleNumber}<br>` : ''}
                     <strong>Expires:</strong> ${expiryDateFormatted}<br>
                     <strong>Benefits:</strong> Unlimited customers • Auto-cleanup • Analytics
                   </p>
@@ -1012,6 +1014,12 @@ function renderPlatformAdminDashboard() {
                         UTR: ${r.paymentProof?.utrNumber || r.paymentProof?.transactionId || 'N/A'} • 
                         Amount: ₹${r.paymentProof?.amount || 1999}
                       </p>
+                      ${r.paymentProof?.subscriptionId ? `
+                        <p style="font-size:.875rem;font-weight:600;color:#16a34a">
+                          📋 Subscription: ${r.paymentProof.subscriptionId}
+                          ${r.paymentProof.isRenewal ? ` • 🔄 Renewal (Cycle #${r.paymentProof.subscriptionCycleNumber})` : ' • 🆕 New'}
+                        </p>
+                      ` : ''}
                       <p style="font-size:.75rem;color:var(--gray-600)">
                         Submitted: ${r.paymentProof?.uploadedAt ? new Date(r.paymentProof.uploadedAt).toLocaleString() : 'N/A'}
                       </p>
