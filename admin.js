@@ -322,7 +322,7 @@ async function showRestaurantAdmin(rid) {
               <button onclick="downloadQRCode('${rid}')" class="btn btn-secondary">💾 Download QR</button>
               <button onclick="copyQRLink('${rid}')" class="btn" style="background:#2563eb;color:white">🔗 Copy Link</button>
               <button onclick="showQRPosterModal('${rid}')" class="btn btn-success">📋 Print Poster</button>
-              <button onclick="showAddMenuModal('${rid}')" class="btn" style="background:var(--primary);color:white">
+              <button onclick="navigate('/r/${rid}/menu')" class="btn" style="background:var(--primary);color:white">
                 🍽️ ${restaurant.menu ? 'Manage' : 'Add'} Menu
               </button>
             </div>
