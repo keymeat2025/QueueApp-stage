@@ -2459,5 +2459,15 @@ document.getElementById('weeklyValidUntil').valueAsDate = (() => {
   </div>
 </div>
 
+<script>
+function goBackToAdmin() {
+  if (window.parent && window.parent.navigate) {
+    const rid = window.currentRestaurantId || 'unknown';
+    window.parent.navigate('/r/' + rid + '/admin');
+  } else {
+    window.history.back();
+  }
+}
+</script>  
 </body>
 </html>
