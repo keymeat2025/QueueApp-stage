@@ -434,10 +434,81 @@ function showMenuPage(rid) {
       return response.text();
     })
     .then(html => {
-      // Inject restaurant data into the page
+      // Inject restaurant data and add navigation script
       const modifiedHtml = html
         .replace(/\{\{restaurantId\}\}/g, rid)
-        .replace(/\{\{restaurantName\}\}/g, restaurant.name);
+        .replace(/\{\{restaurantName\}\}/g, restaurant.name)
+        .replace('</body>', `
+          <script>
+            // Inject restaurant context
+            window.currentRestaurantId = '${rid}';
+            window.currentRestaurant = ${JSON.stringify(restaurant)};
+            
+            // Override the back navigation
+            const backButtons = document.querySelectorAll('button[onclick*="navigate"]');
+            backButtons.forEach(btn => {
+              btn.onclick = function() {
+                window.parent.navigate('/r/${rid}/admin');
+              };
+            });
+            
+            // Override saveAndPreview to integrate with QueueApp
+            const originalSaveAndPreview = window.saveAndPreview;
+            window.saveAndPreview = function() {
+              try {
+                // Call original function
+                if (originalSaveAndPreview) {
+                  originalSaveAndPreview();
+                }
+                
+                // Save menu data to restaurant object in QueueApp
+                const menuData = localStorage.getItem('restaurantMenu');
+                if (menuData) {
+                  const parsedMenu = JSON.parse(menuData);
+                  
+                  // Update restaurant object
+                  if (window.parent.DB && window.parent.DB.restaurants['${rid}']) {
+                    window.parent.DB.restaurants['${rid}'].menuData = parsedMenu;
+                    window.parent.DB.save();
+                  }
+                  
+                  // Also save to Firebase
+                  if (window.parent.db) {
+                    window.parent.db.collection('restaurants').doc('${rid}').update({
+                      menuData: parsedMenu,
+                      menuLastUpdated: new Date().toISOString()
+                    }).then(() => {
+                      console.log('✅ Menu saved to Firebase');
+                    }).catch(err => {
+                      console.error('❌ Firebase save error:', err);
+                    });
+                  }
+                  
+                  alert('✅ Menu saved successfully!\\n\\nYou can now share this menu with your customers.');
+                  
+                  // Redirect back to admin dashboard after 2 seconds
+                  setTimeout(() => {
+                    window.parent.navigate('/r/${rid}/admin');
+                  }, 2000);
+                }
+              } catch (error) {
+                console.error('Error saving menu:', error);
+                alert('❌ Error saving menu: ' + error.message);
+              }
+            };
+            
+            // Fix back button click
+            document.addEventListener('DOMContentLoaded', function() {
+              const backBtn = document.querySelector('button[onclick*="admin"]');
+              if (backBtn) {
+                backBtn.onclick = function() {
+                  window.parent.navigate('/r/${rid}/admin');
+                  return false;
+                };
+              }
+            });
+          </script>
+        </body>`);
       
       render(modifiedHtml);
     })
