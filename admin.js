@@ -409,6 +409,51 @@ async function showRestaurantAdmin(rid) {
   });
 }
 
+// ============================================================================
+// MENU MANAGEMENT PAGE
+// ============================================================================
+
+function showMenuPage(rid) {
+  const restaurant = DB.restaurants[rid];
+  
+  if (!restaurant) {
+    render(`<div class="container text-center" style="padding-top:4rem"><h1 style="color:var(--danger)">Restaurant not found</h1></div>`);
+    return;
+  }
+  
+  // Check authentication
+  if (!sessionStorage.getItem(`loggedIn_${rid}`)) {
+    showRestaurantLogin(rid);
+    return;
+  }
+  
+  // Load the external HTML page
+  fetch('add_menu_admin_end.html')
+    .then(response => {
+      if (!response.ok) throw new Error('Menu page not found');
+      return response.text();
+    })
+    .then(html => {
+      // Inject restaurant data into the page
+      const modifiedHtml = html
+        .replace(/\{\{restaurantId\}\}/g, rid)
+        .replace(/\{\{restaurantName\}\}/g, restaurant.name);
+      
+      render(modifiedHtml);
+    })
+    .catch(err => {
+      render(`
+        <div class="container text-center" style="padding-top:4rem">
+          <h1 style="color:var(--danger)">Error Loading Menu Page</h1>
+          <p style="color:var(--gray-600);margin:1rem 0">${err.message}</p>
+          <button onclick="navigate('/r/${rid}/admin')" class="btn btn-primary">
+            ← Back to Dashboard
+          </button>
+        </div>
+      `);
+    });
+}
+
 // Allocate table to customer
 async function allocateTable(rid, queueNumber) {
   const tableNo = document.getElementById(`table-${queueNumber}`).value;
@@ -1519,6 +1564,7 @@ window.adminLogout = adminLogout;
 window.showQRPosterModal = showQRPosterModal;
 window.downloadQRPoster = downloadQRPoster;
 window.closePosterModal = closePosterModal;
+window.showMenuPage = showMenuPage;
 
 console.log('✅ QueueApp Admin Module Loaded');
 console.log('📊 Premium Expiry PI Chart: ENABLED');
