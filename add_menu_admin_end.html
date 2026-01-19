@@ -751,26 +751,39 @@ input:checked + .toggle-slider:before {
 
   <!-- Processing Mode Selection -->
   <div class="api-key-section">
-    <h3>⚙️ How to Add Menu Items</h3>
+    <h3>⚙️ Choose How to Add Menu Items</h3>
     
-    <div style="background: #f0f9ff; border: 2px solid #667eea; border-radius: 10px; padding: 20px; margin-top: 15px;">
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-        <div style="font-size: 24px;">✍️</div>
-        <div>
-          <div style="font-weight: 700; font-size: 18px; color: #333;">Manual Entry Mode</div>
-          <div style="font-size: 14px; color: #666;">Create and manage your menu items manually</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+      <!-- Manual Mode -->
+      <div style="border: 3px solid #28a745; border-radius: 10px; padding: 15px; cursor: pointer; background: #f8fff9;" onclick="selectAddMode('manual')" id="manualModeCard">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <input type="radio" name="addMode" id="manualMode" value="manual" checked style="width: 20px; height: 20px;">
+          <label for="manualMode" style="font-weight: 700; font-size: 16px; cursor: pointer;">✍️ Manual Entry (Recommended)</label>
+        </div>
+        <div style="font-size: 13px; color: #555; line-height: 1.5;">
+          ✅ Add items yourself<br>
+          ✅ Create special menus<br>
+          ✅ Full control<br>
+          ✅ No scanning needed<br>
+          ✅ Perfect for new items<br>
+          💡 Best for quick setup
         </div>
       </div>
-      <div style="font-size: 13px; color: #555; line-height: 1.6; margin-top: 10px;">
-        ✅ Add items yourself • ✅ Create special menus • ✅ Full control • ✅ No API needed<br>
-        💡 Perfect for creating and managing your restaurant menu
+      
+      <!-- Image Upload Mode -->
+      <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; background: white;" onclick="selectAddMode('image')" id="imageModeCard">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <input type="radio" name="addMode" id="imageMode" value="image" style="width: 20px; height: 20px;">
+          <label for="imageMode" style="font-weight: 700; font-size: 16px; cursor: pointer;">📸 Scan Menu Images</label>
+        </div>
+        <div style="font-size: 13px; color: #555; line-height: 1.5;">
+          📷 Upload menu photos<br>
+          🔄 Auto-extract items<br>
+          🆓 Free OCR (basic)<br>
+          ⭐ Premium OCR (AI-powered)<br>
+          💡 Good for existing menus
+        </div>
       </div>
-    </div>
-    
-    <!-- Coming Soon Notice for Image Scan -->
-    <div style="background: #f8f9fa; border: 2px dashed #ccc; border-radius: 10px; padding: 15px; margin-top: 15px; text-align: center;">
-      <div style="font-size: 16px; color: #666; font-weight: 600;">📸 Image Scan Feature - Coming Soon!</div>
-      <div style="font-size: 13px; color: #999; margin-top: 5px;">Upload menu photos and auto-extract items</div>
     </div>
   </div>
 
@@ -881,8 +894,8 @@ input:checked + .toggle-slider:before {
     </div>
   </div>
 
-  <!-- Image Upload Section - Hidden for future release -->
-  <div id="imageUploadSection" class="section" style="display: none !important;">
+  <!-- Image Upload Section (Hidden by default) -->
+  <div id="imageUploadSection" class="section" style="display: none;">
     <div class="section-title">
       <span>📸</span>
       <span>Step 1: Upload Menu Images</span>
@@ -1149,6 +1162,53 @@ let manualMenuData = {
 
 let categoryCounter = 0;
 let itemCounter = 0;
+
+function selectAddMode(mode) {
+  const manualCard = document.getElementById('manualModeCard');
+  const imageCard = document.getElementById('imageModeCard');
+  const manualSection = document.getElementById('manualEntrySection');
+  const imageSection = document.getElementById('imageUploadSection');
+  const manualRadio = document.getElementById('manualMode');
+  const imageRadio = document.getElementById('imageMode');
+  
+  if (mode === 'manual') {
+    manualCard.style.border = '3px solid #28a745';
+    manualCard.style.background = '#f8fff9';
+    imageCard.style.border = '2px solid #e0e0e0';
+    imageCard.style.background = 'white';
+    manualSection.style.display = 'block';
+    imageSection.style.display = 'none';
+    manualRadio.checked = true;
+  } else {
+    imageCard.style.border = '3px solid #667eea';
+    imageCard.style.background = '#f0f4ff';
+    manualCard.style.border = '2px solid #e0e0e0';
+    manualCard.style.background = 'white';
+    manualSection.style.display = 'none';
+    imageSection.style.display = 'block';
+    imageRadio.checked = true;
+  }
+}
+
+function selectOCRMode(mode) {
+  const freeCard = document.getElementById('freeOCRCard');
+  const premiumCard = document.getElementById('premiumOCRCard');
+  const apiKeyInput = document.getElementById('ocrApiKeyInput');
+  const freeRadio = document.getElementById('freeOCR');
+  const premiumRadio = document.getElementById('premiumOCR');
+  
+  if (mode === 'free') {
+    freeCard.style.border = '3px solid #28a745';
+    premiumCard.style.border = '2px solid #e0e0e0';
+    apiKeyInput.style.display = 'none';
+    freeRadio.checked = true;
+  } else {
+    premiumCard.style.border = '3px solid #667eea';
+    freeCard.style.border = '2px solid #e0e0e0';
+    apiKeyInput.style.display = 'block';
+    premiumRadio.checked = true;
+  }
+}
 
 // Toggle Special Sections
 function toggleSpecialSection(type) {
@@ -1958,17 +2018,10 @@ function showResults() {
     `;
   }).join('');
   
-  // Add quick save button at the top of results (only if it doesn't exist)
+  // Add quick save button at the top of results
   const resultsSection = document.getElementById('resultsSection');
-  
-  // Remove existing quick save button if it exists to avoid duplicates
-  const existingBtn = resultsSection.querySelector('.quick-save-btn');
-  if (existingBtn) {
-    existingBtn.remove();
-  }
-  
   const quickSaveBtn = document.createElement('button');
-  quickSaveBtn.className = 'btn btn-success quick-save-btn';
+  quickSaveBtn.className = 'btn btn-success';
   quickSaveBtn.innerHTML = '<span>⚡</span> Quick Save & Preview (Skip Customization)';
   quickSaveBtn.onclick = saveAndPreview;
   quickSaveBtn.style.marginBottom = '20px';
@@ -2459,15 +2512,5 @@ document.getElementById('weeklyValidUntil').valueAsDate = (() => {
   </div>
 </div>
 
-<script>
-function goBackToAdmin() {
-  if (window.parent && window.parent.navigate) {
-    const rid = window.currentRestaurantId || 'unknown';
-    window.parent.navigate('/r/' + rid + '/admin');
-  } else {
-    window.history.back();
-  }
-}
-</script>  
 </body>
 </html>
