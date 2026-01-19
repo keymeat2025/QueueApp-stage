@@ -146,7 +146,7 @@ h1 {
           <!-- Today's Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableTodaySpecial" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableTodaySpecial" onchange="toggleSpecialSection('today')" style="width: 18px; height: 18px;">
               <label for="enableTodaySpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">🌅 Today's Special</label>
             </div>
             <div id="todaySpecialForm" style="display: none; margin-top: 15px;">
@@ -160,7 +160,7 @@ h1 {
           <!-- Chef's Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableChefSpecial" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableChefSpecial" onchange="toggleSpecialSection('chef')" style="width: 18px; height: 18px;">
               <label for="enableChefSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">👨‍🍳 Chef's Special</label>
             </div>
             <div id="chefSpecialForm" style="display: none; margin-top: 15px;">
@@ -174,7 +174,7 @@ h1 {
           <!-- New Items -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableNewItems" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableNewItems" onchange="toggleSpecialSection('new')" style="width: 18px; height: 18px;">
               <label for="enableNewItems" style="font-weight: 600; font-size: 16px; cursor: pointer;">🆕 New Items</label>
             </div>
             <div id="newItemsForm" style="display: none; margin-top: 15px;">
@@ -188,7 +188,7 @@ h1 {
           <!-- Week's Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableWeekSpecial" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableWeekSpecial" onchange="toggleSpecialSection('week')" style="width: 18px; height: 18px;">
               <label for="enableWeekSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">📅 This Week's Special</label>
             </div>
             <div id="weekSpecialForm" style="display: none; margin-top: 15px;">
@@ -202,7 +202,7 @@ h1 {
           <!-- Festive Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableFestiveSpecial" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableFestiveSpecial" onchange="toggleSpecialSection('festive')" style="width: 18px; height: 18px;">
               <label for="enableFestiveSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">🎉 Festive Special</label>
             </div>
             <div id="festiveSpecialForm" style="display: none; margin-top: 15px;">
@@ -237,7 +237,7 @@ h1 {
 
 <script>
 // ========================================
-// MENU MANAGEMENT JAVASCRIPT - EMBEDDED
+// MENU MANAGEMENT JAVASCRIPT
 // ========================================
 
 let manualMenuData = {
@@ -254,28 +254,7 @@ let manualMenuData = {
 let categoryCounter = 0;
 let itemCounter = 0;
 
-console.log('✅ Menu Management Script Loaded');
-
-// Setup event listeners immediately
-document.getElementById('enableTodaySpecial').addEventListener('change', function() {
-  toggleSpecialSection('today');
-});
-
-document.getElementById('enableChefSpecial').addEventListener('change', function() {
-  toggleSpecialSection('chef');
-});
-
-document.getElementById('enableNewItems').addEventListener('change', function() {
-  toggleSpecialSection('new');
-});
-
-document.getElementById('enableWeekSpecial').addEventListener('change', function() {
-  toggleSpecialSection('week');
-});
-
-document.getElementById('enableFestiveSpecial').addEventListener('change', function() {
-  toggleSpecialSection('festive');
-});
+console.log('✅ Script loaded');
 
 // Navigation
 function goBackToAdmin() {
@@ -288,8 +267,9 @@ function goBackToAdmin() {
   }
 }
 
-// Toggle Special Sections
+// Toggle Special Sections - NOW USING INLINE onchange=""
 function toggleSpecialSection(type) {
+  console.log('🔄 Toggling:', type);
   const checkboxId = 'enable' + (type === 'festive' ? 'Festive' : type.charAt(0).toUpperCase() + type.slice(1)) + 'Special';
   const checkbox = document.getElementById(checkboxId);
   const form = document.getElementById(`${type}SpecialForm`);
@@ -298,23 +278,25 @@ function toggleSpecialSection(type) {
     if (checkbox.checked) {
       form.style.display = 'block';
       manualMenuData.specials[type].enabled = true;
-      console.log(`✅ ${type} special enabled`);
+      console.log(`✅ ${type} enabled`);
     } else {
       form.style.display = 'none';
       manualMenuData.specials[type].enabled = false;
-      console.log(`❌ ${type} special disabled`);
+      console.log(`❌ ${type} disabled`);
     }
+  } else {
+    console.error('❌ Elements not found:', checkboxId);
   }
 }
 
-// Add Item to Special Category
+// Add Item to Category
 function addItemToCategory(categoryType) {
   console.log('➕ Adding item to:', categoryType);
   const itemId = `item-${categoryType}-${itemCounter++}`;
   const container = document.getElementById(`${categoryType}SpecialItems`);
   
   if (!container) {
-    console.error('Container not found for:', categoryType);
+    console.error('❌ Container not found:', `${categoryType}SpecialItems`);
     alert('Error: Container not found');
     return;
   }
@@ -339,7 +321,7 @@ function addItemToCategory(categoryType) {
   `;
   
   container.appendChild(itemDiv);
-  console.log('✅ Item form added:', itemId);
+  console.log('✅ Form added:', itemId);
 }
 
 // Save Item
@@ -373,7 +355,7 @@ function saveItemToCategory(categoryType, itemId) {
       </div>
     `;
   }
-  console.log('✅ Item saved:', name);
+  console.log('✅ Saved:', name);
 }
 
 // Remove/Delete Items
@@ -393,10 +375,14 @@ function deleteItemFromCategory(categoryType, itemId) {
 
 // Add New Category
 function addNewCategory() {
+  console.log('➕ Adding new category');
   const catId = `category-${categoryCounter++}`;
   const container = document.getElementById('manualCategoriesContainer');
   
-  if (!container) return;
+  if (!container) {
+    console.error('❌ Container not found');
+    return;
+  }
   
   const catDiv = document.createElement('div');
   catDiv.id = catId;
@@ -416,13 +402,19 @@ function addNewCategory() {
   
   container.appendChild(catDiv);
   manualMenuData.categories.push({ id: catId, name: '', items: [] });
+  console.log('✅ Category added:', catId);
 }
 
-// Add Item to Regular Category (similar functions as special categories)
+// Add Item to Regular Category
 function addItemToRegularCategory(catId) {
+  console.log('➕ Adding item to category:', catId);
   const itemId = `item-${catId}-${itemCounter++}`;
   const container = document.getElementById(`${catId}-items`);
-  if (!container) return;
+  
+  if (!container) {
+    console.error('❌ Container not found');
+    return;
+  }
   
   const itemDiv = document.createElement('div');
   itemDiv.id = itemId;
@@ -439,6 +431,7 @@ function addItemToRegularCategory(catId) {
     </div>
   `;
   container.appendChild(itemDiv);
+  console.log('✅ Item form added');
 }
 
 function saveItemToRegularCategory(catId, itemId) {
@@ -464,6 +457,7 @@ function saveItemToRegularCategory(catId, itemId) {
       </div>
     `;
   }
+  console.log('✅ Item saved');
 }
 
 function deleteRegularItem(catId, itemId) {
@@ -584,6 +578,8 @@ function previewManualMenu() {
     }
   });
   
+  console.log('📦 Final data:', finalData);
+  
   // Save
   try {
     localStorage.setItem('restaurantMenu', JSON.stringify(finalData));
@@ -601,17 +597,19 @@ function previewManualMenu() {
         alert('✅ Menu saved successfully!');
         setTimeout(() => goBackToAdmin(), 2000);
       }).catch(err => {
+        console.error('❌ Firebase error:', err);
         alert('✅ Saved locally!\n⚠️ Cloud sync failed.');
       });
     } else {
-      alert('✅ Menu saved!');
+      alert('✅ Menu saved to localStorage!');
     }
   } catch (error) {
+    console.error('❌ Save error:', error);
     alert('❌ Error: ' + error.message);
   }
 }
 
-console.log('✅ All functions loaded');
+console.log('✅ All functions ready');
 </script>
 
 </body>
