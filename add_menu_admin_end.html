@@ -3,13 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Menu Management System</title>
+<title>Menu Management - QueueApp</title>
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -19,316 +15,278 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   background: white;
   border-radius: 15px;
-  padding: 40px;
+  padding: 30px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 3px solid #f0f0f0;
-}
-
-h1 {
-  color: #333;
-  font-size: 32px;
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  color: #666;
-  font-size: 16px;
-}
+h1 { color: #333; text-align: center; margin-bottom: 10px; }
+.subtitle { text-align: center; color: #666; margin-bottom: 30px; }
 
 .section {
-  margin-bottom: 40px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 2px solid #e0e0e0;
 }
 
 .section-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #333;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 2px solid #667eea;
+}
+
+.special-box {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.special-header {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
 }
 
-.btn {
-  padding: 16px;
+.special-header input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.special-content {
+  display: none;
   margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.special-content.active { display: block; }
+
+.btn {
+  padding: 10px 20px;
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+}
+
+.btn-primary { background: #7b2d26; color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-secondary { background: #6c757d; color: white; }
+
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+.item-form {
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+.item-form input,
+.item-form textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.item-form textarea { min-height: 60px; resize: vertical; }
+
+.item-saved {
+  background: white;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.item-info { flex: 1; }
+.item-name { font-weight: 600; color: #333; }
+.item-price { color: #667eea; font-weight: 600; margin-top: 4px; }
+.item-desc { color: #666; font-size: 13px; margin-top: 4px; }
+
+.category-box {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+}
+
+.category-box input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.btn-group {
+  display: flex;
   gap: 10px;
+  margin-top: 10px;
 }
 
-.btn-primary {
-  background: #7b2d26;
-  color: white;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-success {
-  background: #28a745;
-  color: white;
-}
-
-.btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-}
-
-.api-key-section {
-  background: #fff3cd;
-  border: 2px solid #ffc107;
+.save-section {
+  background: #e8f5e9;
+  border: 2px solid #28a745;
   border-radius: 10px;
   padding: 20px;
-  margin-bottom: 30px;
+  text-align: center;
 }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header">
-    <h1>🍽️ Menu Management System</h1>
-    <p class="subtitle">{{restaurantName}}</p>
-    <button onclick="goBackToAdmin()" class="btn btn-secondary" style="width: auto; padding: 10px 20px; margin-top: 15px;">
-      ← Back to Dashboard
-    </button>
-  </div>
+  <h1>🍽️ Menu Management System</h1>
+  <p class="subtitle">Create and manage your restaurant menu</p>
 
-  <div class="api-key-section">
-    <h3 style="color:#856404;margin-bottom:10px;">⚙️ How to Add Menu Items</h3>
-    
-    <div style="background: #f0f9ff; border: 2px solid #667eea; border-radius: 10px; padding: 20px; margin-top: 15px;">
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-        <div style="font-size: 24px;">✍️</div>
-        <div>
-          <div style="font-weight: 700; font-size: 18px; color: #333;">Manual Entry Mode</div>
-          <div style="font-size: 14px; color: #666;">Create and manage your menu items manually</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Special Menus Section -->
   <div class="section">
-    <div class="section-title">
-      <span>✍️</span>
-      <span>Step 1: Create Your Menu Manually</span>
-    </div>
+    <div class="section-title">⭐ Special Menus</div>
     
-    <div style="background: #f8f9fa; border-radius: 10px; padding: 25px; border: 2px solid #28a745;">
-      
-      <!-- Special Menus -->
-      <div style="margin-bottom: 30px;">
-        <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">⭐ Special Menus</h3>
-        
-        <div style="display: grid; gap: 15px;">
-          <!-- Today's Special -->
-          <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableTodaySpecial" onchange="toggleSpecialSection('today')" style="width: 18px; height: 18px;">
-              <label for="enableTodaySpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">🌅 Today's Special</label>
-            </div>
-            <div id="todaySpecialForm" style="display: none; margin-top: 15px;">
-              <button class="btn btn-primary" onclick="addItemToCategory('today')" style="width: auto; padding: 8px 16px; margin: 0;">
-                ➕ Add Item
-              </button>
-              <div id="todaySpecialItems" style="margin-top: 15px;"></div>
-            </div>
-          </div>
-
-          <!-- Chef's Special -->
-          <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableChefSpecial" onchange="toggleSpecialSection('chef')" style="width: 18px; height: 18px;">
-              <label for="enableChefSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">👨‍🍳 Chef's Special</label>
-            </div>
-            <div id="chefSpecialForm" style="display: none; margin-top: 15px;">
-              <button class="btn btn-primary" onclick="addItemToCategory('chef')" style="width: auto; padding: 8px 16px; margin: 0;">
-                ➕ Add Item
-              </button>
-              <div id="chefSpecialItems" style="margin-top: 15px;"></div>
-            </div>
-          </div>
-
-          <!-- New Items -->
-          <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableNewItems" onchange="toggleSpecialSection('new')" style="width: 18px; height: 18px;">
-              <label for="enableNewItems" style="font-weight: 600; font-size: 16px; cursor: pointer;">🆕 New Items</label>
-            </div>
-            <div id="newItemsForm" style="display: none; margin-top: 15px;">
-              <button class="btn btn-primary" onclick="addItemToCategory('new')" style="width: auto; padding: 8px 16px; margin: 0;">
-                ➕ Add Item
-              </button>
-              <div id="newItemsItems" style="margin-top: 15px;"></div>
-            </div>
-          </div>
-
-          <!-- Week's Special -->
-          <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableWeekSpecial" onchange="toggleSpecialSection('week')" style="width: 18px; height: 18px;">
-              <label for="enableWeekSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">📅 This Week's Special</label>
-            </div>
-            <div id="weekSpecialForm" style="display: none; margin-top: 15px;">
-              <button class="btn btn-primary" onclick="addItemToCategory('week')" style="width: auto; padding: 8px 16px; margin: 0;">
-                ➕ Add Item
-              </button>
-              <div id="weekSpecialItems" style="margin-top: 15px;"></div>
-            </div>
-          </div>
-
-          <!-- Festive Special -->
-          <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableFestiveSpecial" onchange="toggleSpecialSection('festive')" style="width: 18px; height: 18px;">
-              <label for="enableFestiveSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">🎉 Festive Special</label>
-            </div>
-            <div id="festiveSpecialForm" style="display: none; margin-top: 15px;">
-              <input type="text" id="festiveSpecialName" placeholder="e.g., Diwali Special, Christmas Menu" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; margin-bottom: 10px;">
-              <button class="btn btn-primary" onclick="addItemToCategory('festive')" style="width: auto; padding: 8px 16px; margin: 0;">
-                ➕ Add Item
-              </button>
-              <div id="festiveSpecialItems" style="margin-top: 15px;"></div>
-            </div>
-          </div>
-        </div>
+    <div class="special-box">
+      <div class="special-header" onclick="toggleSpecial('today')">
+        <input type="checkbox" id="check-today" onclick="event.stopPropagation(); toggleSpecial('today')">
+        <label for="check-today">🌅 Today's Special</label>
       </div>
-
-      <!-- Regular Categories -->
-      <div>
-        <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">🍽️ Regular Menu Categories</h3>
-        
-        <button class="btn btn-success" onclick="addNewCategory()" style="width: auto; padding: 10px 20px; margin-bottom: 15px;">
-          ➕ Add New Category
-        </button>
-        
-        <div id="manualCategoriesContainer"></div>
+      <div id="content-today" class="special-content">
+        <button class="btn btn-primary" onclick="addSpecialItem('today')">➕ Add Item</button>
+        <div id="items-today"></div>
       </div>
-
-      <!-- Preview Button -->
-      <button class="btn btn-success" onclick="previewManualMenu()" style="margin-top: 20px; width: 100%;">
-        👁️ Preview & Save Menu
-      </button>
     </div>
+
+    <div class="special-box">
+      <div class="special-header" onclick="toggleSpecial('chef')">
+        <input type="checkbox" id="check-chef" onclick="event.stopPropagation(); toggleSpecial('chef')">
+        <label for="check-chef">👨‍🍳 Chef's Special</label>
+      </div>
+      <div id="content-chef" class="special-content">
+        <button class="btn btn-primary" onclick="addSpecialItem('chef')">➕ Add Item</button>
+        <div id="items-chef"></div>
+      </div>
+    </div>
+
+    <div class="special-box">
+      <div class="special-header" onclick="toggleSpecial('new')">
+        <input type="checkbox" id="check-new" onclick="event.stopPropagation(); toggleSpecial('new')">
+        <label for="check-new">🆕 New Items</label>
+      </div>
+      <div id="content-new" class="special-content">
+        <button class="btn btn-primary" onclick="addSpecialItem('new')">➕ Add Item</button>
+        <div id="items-new"></div>
+      </div>
+    </div>
+
+    <div class="special-box">
+      <div class="special-header" onclick="toggleSpecial('week')">
+        <input type="checkbox" id="check-week" onclick="event.stopPropagation(); toggleSpecial('week')">
+        <label for="check-week">📅 This Week's Special</label>
+      </div>
+      <div id="content-week" class="special-content">
+        <button class="btn btn-primary" onclick="addSpecialItem('week')">➕ Add Item</button>
+        <div id="items-week"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Regular Categories Section -->
+  <div class="section">
+    <div class="section-title">🍽️ Regular Menu Categories</div>
+    <button class="btn btn-success" onclick="addCategory()">➕ Add New Category</button>
+    <div id="categories-container"></div>
+  </div>
+
+  <!-- Save Button -->
+  <div class="save-section">
+    <button class="btn btn-success" onclick="saveMenu()" style="font-size: 16px; padding: 15px 30px;">
+      💾 Save Menu
+    </button>
   </div>
 </div>
 
 <script>
-// ========================================
-// MENU MANAGEMENT JAVASCRIPT
-// ========================================
-
-let manualMenuData = {
+// Global data
+const menuData = {
   specials: {
     today: { enabled: false, items: [] },
     chef: { enabled: false, items: [] },
     new: { enabled: false, items: [] },
-    week: { enabled: false, items: [] },
-    festive: { enabled: false, name: '', items: [] }
+    week: { enabled: false, items: [] }
   },
   categories: []
 };
 
-let categoryCounter = 0;
 let itemCounter = 0;
+let categoryCounter = 0;
 
-console.log('✅ Script loaded');
-
-// Navigation
-function goBackToAdmin() {
-  if (window.parent && window.parent.navigate && window.currentRestaurantId) {
-    window.parent.navigate('/r/' + window.currentRestaurantId + '/admin');
-  } else if (typeof navigate !== 'undefined' && window.currentRestaurantId) {
-    navigate('/r/' + window.currentRestaurantId + '/admin');
+// Toggle special menu section
+function toggleSpecial(type) {
+  const checkbox = document.getElementById(`check-${type}`);
+  const content = document.getElementById(`content-${type}`);
+  
+  checkbox.checked = !checkbox.checked;
+  
+  if (checkbox.checked) {
+    content.classList.add('active');
+    menuData.specials[type].enabled = true;
   } else {
-    window.history.back();
+    content.classList.remove('active');
+    menuData.specials[type].enabled = false;
   }
 }
 
-// Toggle Special Sections - NOW USING INLINE onchange=""
-function toggleSpecialSection(type) {
-  console.log('🔄 Toggling:', type);
-  const checkboxId = 'enable' + (type === 'festive' ? 'Festive' : type.charAt(0).toUpperCase() + type.slice(1)) + 'Special';
-  const checkbox = document.getElementById(checkboxId);
-  const form = document.getElementById(`${type}SpecialForm`);
+// Add item to special menu
+function addSpecialItem(type) {
+  const itemId = `special-${type}-${itemCounter++}`;
+  const container = document.getElementById(`items-${type}`);
   
-  if (checkbox && form) {
-    if (checkbox.checked) {
-      form.style.display = 'block';
-      manualMenuData.specials[type].enabled = true;
-      console.log(`✅ ${type} enabled`);
-    } else {
-      form.style.display = 'none';
-      manualMenuData.specials[type].enabled = false;
-      console.log(`❌ ${type} disabled`);
-    }
-  } else {
-    console.error('❌ Elements not found:', checkboxId);
-  }
-}
-
-// Add Item to Category
-function addItemToCategory(categoryType) {
-  console.log('➕ Adding item to:', categoryType);
-  const itemId = `item-${categoryType}-${itemCounter++}`;
-  const container = document.getElementById(`${categoryType}SpecialItems`);
-  
-  if (!container) {
-    console.error('❌ Container not found:', `${categoryType}SpecialItems`);
-    alert('Error: Container not found');
-    return;
-  }
-  
-  const itemDiv = document.createElement('div');
-  itemDiv.id = itemId;
-  itemDiv.style.cssText = 'background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #e0e0e0;';
-  itemDiv.innerHTML = `
-    <div style="display: grid; gap: 10px;">
-      <input type="text" placeholder="Item Name *" id="${itemId}-name" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
-      <input type="text" placeholder="Price (e.g., ₹150)" id="${itemId}-price" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
-      <textarea placeholder="Description (optional)" id="${itemId}-desc" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; min-height: 60px; resize: vertical;"></textarea>
-      <div style="display: flex; gap: 10px;">
-        <button onclick="saveItemToCategory('${categoryType}', '${itemId}')" style="flex: 1; padding: 8px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-          ✓ Save Item
-        </button>
-        <button onclick="removeItemForm('${itemId}')" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
-          🗑️
-        </button>
+  const formHtml = `
+    <div id="${itemId}" class="item-form">
+      <input type="text" id="${itemId}-name" placeholder="Item Name *" />
+      <input type="text" id="${itemId}-price" placeholder="Price (e.g., ₹150)" />
+      <textarea id="${itemId}-desc" placeholder="Description (optional)"></textarea>
+      <div class="btn-group">
+        <button class="btn btn-success" onclick="saveSpecialItem('${type}', '${itemId}')">✓ Save</button>
+        <button class="btn btn-danger" onclick="removeItem('${itemId}')">✗ Cancel</button>
       </div>
     </div>
   `;
   
-  container.appendChild(itemDiv);
-  console.log('✅ Form added:', itemId);
+  container.insertAdjacentHTML('beforeend', formHtml);
 }
 
-// Save Item
-function saveItemToCategory(categoryType, itemId) {
-  const name = document.getElementById(`${itemId}-name`)?.value.trim();
-  const price = document.getElementById(`${itemId}-price`)?.value.trim();
-  const desc = document.getElementById(`${itemId}-desc`)?.value.trim();
+// Save special item
+function saveSpecialItem(type, itemId) {
+  const name = document.getElementById(`${itemId}-name`).value.trim();
+  const price = document.getElementById(`${itemId}-price`).value.trim();
+  const desc = document.getElementById(`${itemId}-desc`).value.trim();
   
   if (!name) {
     alert('Item name is required!');
@@ -336,175 +294,159 @@ function saveItemToCategory(categoryType, itemId) {
   }
   
   const item = { name, price, description: desc };
-  manualMenuData.specials[categoryType].items.push(item);
+  menuData.specials[type].items.push(item);
   
-  const itemDiv = document.getElementById(itemId);
-  if (itemDiv) {
-    itemDiv.style.background = 'white';
-    itemDiv.style.border = '2px solid #28a745';
-    itemDiv.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: start;">
-        <div style="flex: 1;">
-          <div style="font-weight: 600; color: #333; font-size: 15px;">${name}</div>
-          ${price ? `<div style="color: #667eea; font-weight: 600; margin-top: 4px;">${price}</div>` : ''}
-          ${desc ? `<div style="color: #666; font-size: 13px; margin-top: 6px;">${desc}</div>` : ''}
-        </div>
-        <button onclick="deleteItemFromCategory('${categoryType}', '${itemId}')" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
-          🗑️ Delete
-        </button>
+  const savedHtml = `
+    <div id="${itemId}" class="item-saved">
+      <div class="item-info">
+        <div class="item-name">${name}</div>
+        ${price ? `<div class="item-price">${price}</div>` : ''}
+        ${desc ? `<div class="item-desc">${desc}</div>` : ''}
       </div>
-    `;
-  }
-  console.log('✅ Saved:', name);
-}
-
-// Remove/Delete Items
-function removeItemForm(itemId) {
-  document.getElementById(itemId)?.remove();
-}
-
-function deleteItemFromCategory(categoryType, itemId) {
-  if (!confirm('Delete this item?')) return;
-  const itemDiv = document.getElementById(itemId);
-  if (!itemDiv) return;
-  const name = itemDiv.querySelector('div > div')?.textContent;
-  const index = manualMenuData.specials[categoryType].items.findIndex(item => item.name === name);
-  if (index > -1) manualMenuData.specials[categoryType].items.splice(index, 1);
-  itemDiv.remove();
-}
-
-// Add New Category
-function addNewCategory() {
-  console.log('➕ Adding new category');
-  const catId = `category-${categoryCounter++}`;
-  const container = document.getElementById('manualCategoriesContainer');
-  
-  if (!container) {
-    console.error('❌ Container not found');
-    return;
-  }
-  
-  const catDiv = document.createElement('div');
-  catDiv.id = catId;
-  catDiv.style.cssText = 'background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #e0e0e0;';
-  catDiv.innerHTML = `
-    <div style="margin-bottom: 15px;">
-      <input type="text" placeholder="Category Name (e.g., Appetizers)" id="${catId}-name" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 16px; font-weight: 600;">
+      <button class="btn btn-danger" onclick="deleteSpecialItem('${type}', '${itemId}', '${name}')">🗑️</button>
     </div>
-    <button onclick="addItemToRegularCategory('${catId}')" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 10px;">
-      ➕ Add Item
-    </button>
-    <button onclick="deleteCategory('${catId}')" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-      🗑️ Delete Category
-    </button>
-    <div id="${catId}-items" style="margin-top: 15px;"></div>
   `;
   
-  container.appendChild(catDiv);
-  manualMenuData.categories.push({ id: catId, name: '', items: [] });
-  console.log('✅ Category added:', catId);
+  document.getElementById(itemId).outerHTML = savedHtml;
 }
 
-// Add Item to Regular Category
-function addItemToRegularCategory(catId) {
-  console.log('➕ Adding item to category:', catId);
+// Delete special item
+function deleteSpecialItem(type, itemId, name) {
+  if (!confirm('Delete this item?')) return;
+  
+  const index = menuData.specials[type].items.findIndex(item => item.name === name);
+  if (index > -1) {
+    menuData.specials[type].items.splice(index, 1);
+  }
+  
+  document.getElementById(itemId).remove();
+}
+
+// Remove item form
+function removeItem(itemId) {
+  document.getElementById(itemId).remove();
+}
+
+// Add new category
+function addCategory() {
+  const catId = `category-${categoryCounter++}`;
+  const container = document.getElementById('categories-container');
+  
+  const categoryHtml = `
+    <div id="${catId}" class="category-box">
+      <input type="text" id="${catId}-name" placeholder="Category Name (e.g., Appetizers, Main Course)" />
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="addCategoryItem('${catId}')">➕ Add Item</button>
+        <button class="btn btn-danger" onclick="deleteCategory('${catId}')">🗑️ Delete Category</button>
+      </div>
+      <div id="${catId}-items"></div>
+    </div>
+  `;
+  
+  container.insertAdjacentHTML('beforeend', categoryHtml);
+  menuData.categories.push({ id: catId, name: '', items: [] });
+}
+
+// Add item to category
+function addCategoryItem(catId) {
   const itemId = `item-${catId}-${itemCounter++}`;
   const container = document.getElementById(`${catId}-items`);
   
-  if (!container) {
-    console.error('❌ Container not found');
-    return;
-  }
-  
-  const itemDiv = document.createElement('div');
-  itemDiv.id = itemId;
-  itemDiv.style.cssText = 'background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #e0e0e0;';
-  itemDiv.innerHTML = `
-    <div style="display: grid; gap: 10px;">
-      <input type="text" placeholder="Item Name *" id="${itemId}-name" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
-      <input type="text" placeholder="Price" id="${itemId}-price" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
-      <textarea placeholder="Description" id="${itemId}-desc" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; min-height: 60px;"></textarea>
-      <div style="display: flex; gap: 10px;">
-        <button onclick="saveItemToRegularCategory('${catId}', '${itemId}')" style="flex: 1; padding: 8px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✓ Save</button>
-        <button onclick="removeItemForm('${itemId}')" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+  const formHtml = `
+    <div id="${itemId}" class="item-form">
+      <input type="text" id="${itemId}-name" placeholder="Item Name *" />
+      <input type="text" id="${itemId}-price" placeholder="Price" />
+      <textarea id="${itemId}-desc" placeholder="Description"></textarea>
+      <div class="btn-group">
+        <button class="btn btn-success" onclick="saveCategoryItem('${catId}', '${itemId}')">✓ Save</button>
+        <button class="btn btn-danger" onclick="removeItem('${itemId}')">✗ Cancel</button>
       </div>
     </div>
   `;
-  container.appendChild(itemDiv);
-  console.log('✅ Item form added');
+  
+  container.insertAdjacentHTML('beforeend', formHtml);
 }
 
-function saveItemToRegularCategory(catId, itemId) {
-  const name = document.getElementById(`${itemId}-name`)?.value.trim();
-  const price = document.getElementById(`${itemId}-price`)?.value.trim();
-  const desc = document.getElementById(`${itemId}-desc`)?.value.trim();
-  if (!name) { alert('Item name required!'); return; }
-  const item = { name, price, description: desc };
-  const category = manualMenuData.categories.find(cat => cat.id === catId);
-  if (category) category.items.push(item);
-  const itemDiv = document.getElementById(itemId);
-  if (itemDiv) {
-    itemDiv.style.background = 'white';
-    itemDiv.style.border = '2px solid #28a745';
-    itemDiv.innerHTML = `
-      <div style="display: flex; justify-content: space-between;">
-        <div style="flex: 1;">
-          <div style="font-weight: 600;">${name}</div>
-          ${price ? `<div style="color: #667eea; font-weight: 600;">${price}</div>` : ''}
-          ${desc ? `<div style="color: #666; font-size: 13px;">${desc}</div>` : ''}
-        </div>
-        <button onclick="deleteRegularItem('${catId}', '${itemId}')" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
-      </div>
-    `;
+// Save category item
+function saveCategoryItem(catId, itemId) {
+  const name = document.getElementById(`${itemId}-name`).value.trim();
+  const price = document.getElementById(`${itemId}-price`).value.trim();
+  const desc = document.getElementById(`${itemId}-desc`).value.trim();
+  
+  if (!name) {
+    alert('Item name is required!');
+    return;
   }
-  console.log('✅ Item saved');
+  
+  const item = { name, price, description: desc };
+  const category = menuData.categories.find(cat => cat.id === catId);
+  if (category) {
+    category.items.push(item);
+  }
+  
+  const savedHtml = `
+    <div id="${itemId}" class="item-saved">
+      <div class="item-info">
+        <div class="item-name">${name}</div>
+        ${price ? `<div class="item-price">${price}</div>` : ''}
+        ${desc ? `<div class="item-desc">${desc}</div>` : ''}
+      </div>
+      <button class="btn btn-danger" onclick="deleteCategoryItem('${catId}', '${itemId}', '${name}')">🗑️</button>
+    </div>
+  `;
+  
+  document.getElementById(itemId).outerHTML = savedHtml;
 }
 
-function deleteRegularItem(catId, itemId) {
-  if (!confirm('Delete?')) return;
-  const itemDiv = document.getElementById(itemId);
-  if (!itemDiv) return;
-  const name = itemDiv.querySelector('div > div')?.textContent;
-  const category = manualMenuData.categories.find(cat => cat.id === catId);
+// Delete category item
+function deleteCategoryItem(catId, itemId, name) {
+  if (!confirm('Delete this item?')) return;
+  
+  const category = menuData.categories.find(cat => cat.id === catId);
   if (category) {
     const index = category.items.findIndex(item => item.name === name);
-    if (index > -1) category.items.splice(index, 1);
+    if (index > -1) {
+      category.items.splice(index, 1);
+    }
   }
-  itemDiv.remove();
+  
+  document.getElementById(itemId).remove();
 }
 
+// Delete category
 function deleteCategory(catId) {
-  if (!confirm('Delete category?')) return;
-  const index = manualMenuData.categories.findIndex(cat => cat.id === catId);
-  if (index > -1) manualMenuData.categories.splice(index, 1);
-  document.getElementById(catId)?.remove();
+  if (!confirm('Delete this entire category?')) return;
+  
+  const index = menuData.categories.findIndex(cat => cat.id === catId);
+  if (index > -1) {
+    menuData.categories.splice(index, 1);
+  }
+  
+  document.getElementById(catId).remove();
 }
 
-// Preview & Save
-function previewManualMenu() {
-  console.log('📋 Previewing menu...');
-  
+// Save menu
+function saveMenu() {
   // Update category names
-  manualMenuData.categories.forEach(cat => {
-    const nameInput = document.getElementById(cat.id + '-name');
-    if (nameInput) cat.name = nameInput.value.trim() || 'Untitled';
+  menuData.categories.forEach(cat => {
+    const nameInput = document.getElementById(`${cat.id}-name`);
+    if (nameInput) {
+      cat.name = nameInput.value.trim() || 'Untitled Category';
+    }
   });
-  
-  if (manualMenuData.specials.festive.enabled) {
-    const festiveNameInput = document.getElementById('festiveSpecialName');
-    if (festiveNameInput) manualMenuData.specials.festive.name = festiveNameInput.value.trim() || 'Festive Special';
-  }
   
   // Validate
   let hasItems = false;
-  for (const key in manualMenuData.specials) {
-    if (manualMenuData.specials[key].enabled && manualMenuData.specials[key].items.length > 0) {
+  
+  for (const key in menuData.specials) {
+    if (menuData.specials[key].enabled && menuData.specials[key].items.length > 0) {
       hasItems = true;
       break;
     }
   }
+  
   if (!hasItems) {
-    for (const cat of manualMenuData.categories) {
+    for (const cat of menuData.categories) {
       if (cat.items.length > 0) {
         hasItems = true;
         break;
@@ -513,37 +455,35 @@ function previewManualMenu() {
   }
   
   if (!hasItems) {
-    alert('⚠️ Please add at least one menu item!');
+    alert('⚠️ Please add at least one menu item before saving!');
     return;
   }
   
   // Build final data
   const finalData = {
     lastUpdated: new Date().toISOString(),
-    restaurantName: window.currentRestaurant?.name || "Your Restaurant",
+    restaurantName: "Your Restaurant",
     specialCategories: [],
     regularCategories: []
   };
   
-  const iconMap = { today: '🌅', chef: '👨‍🍳', new: '🆕', week: '📅', festive: '🎉' };
-  const gradientMap = {
-    today: { start: '#f093fb', end: '#f5576c' },
-    chef: { start: '#fa709a', end: '#fee140' },
-    new: { start: '#a8edea', end: '#fed6e3' },
-    week: { start: '#ffecd2', end: '#fcb69f' },
-    festive: { start: '#ff9a9e', end: '#fecfef' }
-  };
+  const iconMap = { today: '🌅', chef: '👨‍🍳', new: '🆕', week: '📅' };
   const nameMap = {
     today: "Today's Special",
     chef: "Chef's Special",
     new: "New Items",
-    week: "This Week's Special",
-    festive: manualMenuData.specials.festive.name || 'Festive Special'
+    week: "This Week's Special"
+  };
+  const gradientMap = {
+    today: { start: '#f093fb', end: '#f5576c' },
+    chef: { start: '#fa709a', end: '#fee140' },
+    new: { start: '#a8edea', end: '#fed6e3' },
+    week: { start: '#ffecd2', end: '#fcb69f' }
   };
   
   // Add specials
-  for (const key in manualMenuData.specials) {
-    if (manualMenuData.specials[key].enabled && manualMenuData.specials[key].items.length > 0) {
+  for (const key in menuData.specials) {
+    if (menuData.specials[key].enabled && menuData.specials[key].items.length > 0) {
       finalData.specialCategories.push({
         type: key,
         name: nameMap[key],
@@ -551,7 +491,7 @@ function previewManualMenu() {
         icon: iconMap[key],
         gradientStart: gradientMap[key].start,
         gradientEnd: gradientMap[key].end,
-        items: manualMenuData.specials[key].items
+        items: menuData.specials[key].items
       });
     }
   }
@@ -564,7 +504,7 @@ function previewManualMenu() {
     { start: '#ffecd2', end: '#fcb69f' }
   ];
   
-  manualMenuData.categories.forEach((cat, idx) => {
+  menuData.categories.forEach((cat, idx) => {
     if (cat.items.length > 0) {
       const gradient = defaultGradients[idx % defaultGradients.length];
       finalData.regularCategories.push({
@@ -578,38 +518,20 @@ function previewManualMenu() {
     }
   });
   
-  console.log('📦 Final data:', finalData);
-  
-  // Save
+  // Save to localStorage
   try {
     localStorage.setItem('restaurantMenu', JSON.stringify(finalData));
-    console.log('✅ Saved to localStorage');
-    
-    // If in QueueApp context
-    if (window.currentRestaurantId && window.parent.DB && window.parent.db) {
-      window.parent.DB.restaurants[window.currentRestaurantId].menuData = finalData;
-      window.parent.DB.save();
-      
-      window.parent.db.collection('restaurants').doc(window.currentRestaurantId).update({
-        menuData: finalData,
-        menuLastUpdated: new Date().toISOString()
-      }).then(() => {
-        alert('✅ Menu saved successfully!');
-        setTimeout(() => goBackToAdmin(), 2000);
-      }).catch(err => {
-        console.error('❌ Firebase error:', err);
-        alert('✅ Saved locally!\n⚠️ Cloud sync failed.');
-      });
-    } else {
-      alert('✅ Menu saved to localStorage!');
-    }
+    console.log('✅ Menu saved:', finalData);
+    alert('✅ Menu saved successfully!\n\nTotal items: ' + 
+          (finalData.specialCategories.reduce((sum, cat) => sum + cat.items.length, 0) +
+           finalData.regularCategories.reduce((sum, cat) => sum + cat.items.length, 0)));
   } catch (error) {
     console.error('❌ Save error:', error);
-    alert('❌ Error: ' + error.message);
+    alert('❌ Error saving menu: ' + error.message);
   }
 }
 
-console.log('✅ All functions ready');
+console.log('✅ Menu Management System Ready');
 </script>
 
 </body>
