@@ -4,58 +4,133 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin - Menu Management System</title>
-<link rel="stylesheet" href="admin-styles.css">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 15px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid #f0f0f0;
+}
+
+h1 {
+  color: #333;
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 16px;
+}
+
+.section {
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #667eea;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  padding: 16px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-primary {
+  background: #7b2d26;
+  color: white;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+.api-key-section {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+</style>
 </head>
 <body>
 
 <div class="container">
   <div class="header">
     <h1>🍽️ Menu Management System</h1>
-    <p class="subtitle">Upload • Process • Categorize • Customize • Display</p>
+    <p class="subtitle">{{restaurantName}}</p>
+    <button onclick="goBackToAdmin()" class="btn btn-secondary" style="width: auto; padding: 10px 20px; margin-top: 15px;">
+      ← Back to Dashboard
+    </button>
   </div>
 
-  <!-- Processing Mode Selection -->
   <div class="api-key-section">
-    <h3>⚙️ Choose How to Add Menu Items</h3>
+    <h3 style="color:#856404;margin-bottom:10px;">⚙️ How to Add Menu Items</h3>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-      <!-- Manual Mode -->
-      <div style="border: 3px solid #28a745; border-radius: 10px; padding: 15px; cursor: pointer; background: #f8fff9;" onclick="selectAddMode('manual')" id="manualModeCard">
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-          <input type="radio" name="addMode" id="manualMode" value="manual" checked style="width: 20px; height: 20px;">
-          <label for="manualMode" style="font-weight: 700; font-size: 16px; cursor: pointer;">✍️ Manual Entry (Recommended)</label>
-        </div>
-        <div style="font-size: 13px; color: #555; line-height: 1.5;">
-          ✅ Add items yourself<br>
-          ✅ Create special menus<br>
-          ✅ Full control<br>
-          ✅ No scanning needed<br>
-          ✅ Perfect for new items<br>
-          💡 Best for quick setup
-        </div>
-      </div>
-      
-      <!-- Image Upload Mode -->
-      <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; background: white;" onclick="selectAddMode('image')" id="imageModeCard">
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-          <input type="radio" name="addMode" id="imageMode" value="image" style="width: 20px; height: 20px;">
-          <label for="imageMode" style="font-weight: 700; font-size: 16px; cursor: pointer;">📸 Scan Menu Images</label>
-        </div>
-        <div style="font-size: 13px; color: #555; line-height: 1.5;">
-          📷 Upload menu photos<br>
-          🔄 Auto-extract items<br>
-          🆓 Free OCR (basic)<br>
-          ⭐ Premium OCR (AI-powered)<br>
-          💡 Good for existing menus
+    <div style="background: #f0f9ff; border: 2px solid #667eea; border-radius: 10px; padding: 20px; margin-top: 15px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <div style="font-size: 24px;">✍️</div>
+        <div>
+          <div style="font-weight: 700; font-size: 18px; color: #333;">Manual Entry Mode</div>
+          <div style="font-size: 14px; color: #666;">Create and manage your menu items manually</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Manual Entry Section -->
-  <div id="manualEntrySection" class="section" style="display: block;">
+  <div class="section">
     <div class="section-title">
       <span>✍️</span>
       <span>Step 1: Create Your Menu Manually</span>
@@ -63,16 +138,15 @@
     
     <div style="background: #f8f9fa; border-radius: 10px; padding: 25px; border: 2px solid #28a745;">
       
-      <!-- Special Menus First -->
+      <!-- Special Menus -->
       <div style="margin-bottom: 30px;">
         <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">⭐ Special Menus</h3>
-        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Create featured menu sections that stand out</p>
         
         <div style="display: grid; gap: 15px;">
           <!-- Today's Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableTodaySpecial" onchange="toggleSpecialSection('today')" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableTodaySpecial" style="width: 18px; height: 18px;">
               <label for="enableTodaySpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">🌅 Today's Special</label>
             </div>
             <div id="todaySpecialForm" style="display: none; margin-top: 15px;">
@@ -86,7 +160,7 @@
           <!-- Chef's Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableChefSpecial" onchange="toggleSpecialSection('chef')" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableChefSpecial" style="width: 18px; height: 18px;">
               <label for="enableChefSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">👨‍🍳 Chef's Special</label>
             </div>
             <div id="chefSpecialForm" style="display: none; margin-top: 15px;">
@@ -100,7 +174,7 @@
           <!-- New Items -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableNewItems" onchange="toggleSpecialSection('new')" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableNewItems" style="width: 18px; height: 18px;">
               <label for="enableNewItems" style="font-weight: 600; font-size: 16px; cursor: pointer;">🆕 New Items</label>
             </div>
             <div id="newItemsForm" style="display: none; margin-top: 15px;">
@@ -114,7 +188,7 @@
           <!-- Week's Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableWeekSpecial" onchange="toggleSpecialSection('week')" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableWeekSpecial" style="width: 18px; height: 18px;">
               <label for="enableWeekSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">📅 This Week's Special</label>
             </div>
             <div id="weekSpecialForm" style="display: none; margin-top: 15px;">
@@ -128,7 +202,7 @@
           <!-- Festive Special -->
           <div style="background: white; border-radius: 10px; padding: 15px; border: 2px solid #e0e0e0;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-              <input type="checkbox" id="enableFestiveSpecial" onchange="toggleSpecialSection('festive')" style="width: 18px; height: 18px;">
+              <input type="checkbox" id="enableFestiveSpecial" style="width: 18px; height: 18px;">
               <label for="enableFestiveSpecial" style="font-weight: 600; font-size: 16px; cursor: pointer;">🎉 Festive Special</label>
             </div>
             <div id="festiveSpecialForm" style="display: none; margin-top: 15px;">
@@ -145,7 +219,6 @@
       <!-- Regular Categories -->
       <div>
         <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">🍽️ Regular Menu Categories</h3>
-        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Your main menu items organized by category</p>
         
         <button class="btn btn-success" onclick="addNewCategory()" style="width: auto; padding: 10px 20px; margin-bottom: 15px;">
           ➕ Add New Category
@@ -155,272 +228,391 @@
       </div>
 
       <!-- Preview Button -->
-      <button class="btn btn-success" onclick="previewManualMenu()" style="margin-top: 20px;">
+      <button class="btn btn-success" onclick="previewManualMenu()" style="margin-top: 20px; width: 100%;">
         👁️ Preview & Save Menu
       </button>
     </div>
   </div>
-
-  <!-- Image Upload Section (Hidden by default) -->
-  <div id="imageUploadSection" class="section" style="display: none;">
-    <div class="section-title">
-      <span>📸</span>
-      <span>Step 1: Upload Menu Images</span>
-    </div>
-    
-    <!-- OCR Mode Selection -->
-    <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; border: 2px solid #e0e0e0;">
-      <h3 style="font-size: 16px; margin-bottom: 15px; color: #333;">Choose OCR Method:</h3>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-        <!-- Free OCR -->
-        <div style="border: 3px solid #28a745; border-radius: 8px; padding: 15px; cursor: pointer; background: white;" onclick="selectOCRMode('free')" id="freeOCRCard">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <input type="radio" name="ocrMode" id="freeOCR" value="free" checked style="width: 18px; height: 18px;">
-            <label for="freeOCR" style="font-weight: 600; font-size: 15px; cursor: pointer;">🆓 Free OCR</label>
-          </div>
-          <div style="font-size: 12px; color: #555; line-height: 1.4;">
-            ✅ No API key<br>
-            ✅ No limits<br>
-            ⚠️ Basic accuracy<br>
-            💡 Tesseract.js
-          </div>
-        </div>
-        
-        <!-- Premium OCR -->
-        <div style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 15px; cursor: pointer; background: white;" onclick="selectOCRMode('premium')" id="premiumOCRCard">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <input type="radio" name="ocrMode" id="premiumOCR" value="premium" style="width: 18px; height: 18px;">
-            <label for="premiumOCR" style="font-weight: 600; font-size: 15px; cursor: pointer;">⭐ Premium OCR</label>
-          </div>
-          <div style="font-size: 12px; color: #555; line-height: 1.4;">
-            ✨ AI-powered<br>
-            🎯 High accuracy<br>
-            ⚠️ Needs API key<br>
-            💡 GPT-4 Vision
-          </div>
-        </div>
-      </div>
-      
-      <!-- API Key Input -->
-      <div id="ocrApiKeyInput" style="display: none; margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #667eea;">
-        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px;">OpenAI API Key:</label>
-        <input type="text" id="apiKey" placeholder="sk-proj-..." style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-family: monospace; font-size: 13px;">
-        <div style="margin-top: 8px; font-size: 12px; color: #666;">
-          Get key: <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #667eea;">platform.openai.com/api-keys</a>
-        </div>
-      </div>
-    </div>
-    
-    <div class="upload-section" onclick="document.getElementById('imageInput').click()">
-      <div class="upload-icon">📸</div>
-      <label class="upload-label">Click to Upload Menu Images</label>
-      <p>Select multiple images (JPG, PNG) • Maximum 10 images</p>
-      <input type="file" id="imageInput" multiple accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
-    </div>
-
-    <div class="image-preview" id="imagePreview"></div>
-
-    <button class="btn btn-primary" id="processBtn" onclick="processAllImages()" disabled>
-      <span>🔄</span> Extract & Categorize Menu
-    </button>
-
-    <div class="progress-section" id="progressSection">
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill">0%</div>
-      </div>
-      <p class="status-text" id="statusText">Initializing...</p>
-    </div>
-  </div>
-
-  <!-- Step 2: Add Special Menus -->
-  <div class="section special-menus" id="specialMenusSection">
-    <div class="section-title">
-      <span>⭐</span>
-      <span>Step 2: Add Special Menus (Optional)</span>
-    </div>
-
-    <!-- Daily Special -->
-    <div class="special-menu-card" id="dailySpecialCard">
-      <div class="special-header">
-        <div class="special-toggle">
-          <label class="toggle-switch">
-            <input type="checkbox" id="dailySpecialToggle" onchange="toggleSpecialMenu('daily')">
-            <span class="toggle-slider"></span>
-          </label>
-          <span>⭐ Today's Special</span>
-        </div>
-      </div>
-      <div class="special-content" id="dailySpecialContent">
-        <div class="form-group">
-          <label>Display Name</label>
-          <input type="text" id="dailySpecialName" value="Today's Special" placeholder="e.g., Today's Special">
-        </div>
-        <div class="form-group">
-          <label>Tagline</label>
-          <textarea id="dailySpecialTagline" placeholder="e.g., Fresh catch of the day"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Choose Icon</label>
-          <div class="icon-picker" id="dailyIconPicker">
-            <div class="icon-option selected" data-icon="⭐" onclick="selectIcon('daily', '⭐')">⭐</div>
-            <div class="icon-option" data-icon="🔥" onclick="selectIcon('daily', '🔥')">🔥</div>
-            <div class="icon-option" data-icon="✨" onclick="selectIcon('daily', '✨')">✨</div>
-            <div class="icon-option" data-icon="💫" onclick="selectIcon('daily', '💫')">💫</div>
-            <div class="icon-option" data-icon="🌟" onclick="selectIcon('daily', '🌟')">🌟</div>
-            <div class="icon-option" data-icon="⚡" onclick="selectIcon('daily', '⚡')">⚡</div>
-            <div class="icon-option" data-icon="🎉" onclick="selectIcon('daily', '🎉')">🎉</div>
-            <div class="icon-option" data-icon="🎊" onclick="selectIcon('daily', '🎊')">🎊</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Auto-expire at midnight</label>
-          <input type="checkbox" id="dailyAutoExpire" checked> Yes, remove automatically tomorrow
-        </div>
-        
-        <!-- Add items section -->
-        <div class="form-group" style="border-top: 2px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
-          <label>📝 Add Items to This Special (Select from categories below)</label>
-          <div id="dailySpecialItems" style="background: #f8f9fa; padding: 15px; border-radius: 8px; min-height: 50px; margin-top: 10px;">
-            <p style="color: #999; text-align: center; font-size: 14px;">No items added yet. Check items below to add them here.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chef's Special -->
-    <div class="special-menu-card" id="chefSpecialCard">
-      <div class="special-header">
-        <div class="special-toggle">
-          <label class="toggle-switch">
-            <input type="checkbox" id="chefSpecialToggle" onchange="toggleSpecialMenu('chef')">
-            <span class="toggle-slider"></span>
-          </label>
-          <span>👨‍🍳 Chef's Special</span>
-        </div>
-      </div>
-      <div class="special-content" id="chefSpecialContent">
-        <div class="form-group">
-          <label>Display Name</label>
-          <input type="text" id="chefSpecialName" value="Chef's Special" placeholder="e.g., Chef's Special">
-        </div>
-        <div class="form-group">
-          <label>Tagline</label>
-          <textarea id="chefSpecialTagline" placeholder="e.g., Curated by our master chef"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Choose Icon</label>
-          <div class="icon-picker" id="chefIconPicker">
-            <div class="icon-option selected" data-icon="👨‍🍳" onclick="selectIcon('chef', '👨‍🍳')">👨‍🍳</div>
-            <div class="icon-option" data-icon="🏆" onclick="selectIcon('chef', '🏆')">🏆</div>
-            <div class="icon-option" data-icon="🎖️" onclick="selectIcon('chef', '🎖️')">🎖️</div>
-            <div class="icon-option" data-icon="👑" onclick="selectIcon('chef', '👑')">👑</div>
-            <div class="icon-option" data-icon="💎" onclick="selectIcon('chef', '💎')">💎</div>
-            <div class="icon-option" data-icon="🌟" onclick="selectIcon('chef', '🌟')">🌟</div>
-            <div class="icon-option" data-icon="⭐" onclick="selectIcon('chef', '⭐')">⭐</div>
-            <div class="icon-option" data-icon="✨" onclick="selectIcon('chef', '✨')">✨</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>
-            <input type="checkbox" id="chefPermanent" checked> Keep permanent (don't auto-expire)
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <!-- Weekly Special -->
-    <div class="special-menu-card" id="weeklySpecialCard">
-      <div class="special-header">
-        <div class="special-toggle">
-          <label class="toggle-switch">
-            <input type="checkbox" id="weeklySpecialToggle" onchange="toggleSpecialMenu('weekly')">
-            <span class="toggle-slider"></span>
-          </label>
-          <span>📅 Weekly Special</span>
-        </div>
-      </div>
-      <div class="special-content" id="weeklySpecialContent">
-        <div class="form-group">
-          <label>Display Name</label>
-          <input type="text" id="weeklySpecialName" value="This Week's Special" placeholder="e.g., This Week's Special">
-        </div>
-        <div class="form-group">
-          <label>Tagline</label>
-          <textarea id="weeklySpecialTagline" placeholder="e.g., Limited time, this week only"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Choose Icon</label>
-          <div class="icon-picker" id="weeklyIconPicker">
-            <div class="icon-option selected" data-icon="📅" onclick="selectIcon('weekly', '📅')">📅</div>
-            <div class="icon-option" data-icon="🎉" onclick="selectIcon('weekly', '🎉')">🎉</div>
-            <div class="icon-option" data-icon="🎊" onclick="selectIcon('weekly', '🎊')">🎊</div>
-            <div class="icon-option" data-icon="🎁" onclick="selectIcon('weekly', '🎁')">🎁</div>
-            <div class="icon-option" data-icon="✨" onclick="selectIcon('weekly', '✨')">✨</div>
-            <div class="icon-option" data-icon="🌟" onclick="selectIcon('weekly', '🌟')">🌟</div>
-            <div class="icon-option" data-icon="⚡" onclick="selectIcon('weekly', '⚡')">⚡</div>
-            <div class="icon-option" data-icon="🔥" onclick="selectIcon('weekly', '🔥')">🔥</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Valid until (end of week)</label>
-          <input type="date" id="weeklyValidUntil">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Step 3: Customize Categories -->
-  <div class="section results-section" id="resultsSection">
-    <div class="section-title">
-      <span>✏️</span>
-      <span>Step 3: Customize Categories & Mark Items</span>
-    </div>
-    <div class="category-list" id="categoryList"></div>
-  </div>
-
-  <!-- Step 4: Set Priority -->
-  <div class="section priority-section" id="prioritySection">
-    <div class="section-title">
-      <span>🔢</span>
-      <span>Step 4: Set Display Priority (Drag to Reorder)</span>
-    </div>
-    <div class="sortable-list" id="sortableList"></div>
-    
-    <button class="btn btn-success" onclick="saveAndPreview()" style="margin-top: 30px;">
-      <span>👁️</span> Save & Preview Menu Display
-    </button>
-  </div>
 </div>
 
-<!-- Edit Modal -->
-<div id="editModal" class="edit-modal">
-  <div class="edit-modal-content">
-    <div class="edit-modal-header">
-      <div class="edit-modal-title">✏️ Edit Menu Item</div>
-      <button class="edit-modal-close" onclick="closeEditModal()">&times;</button>
-    </div>
-    <div class="edit-modal-body">
-      <div class="form-group">
-        <label>Item Name *</label>
-        <input type="text" id="editItemName" placeholder="Enter item name" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px;">
-      </div>
-      <div class="form-group">
-        <label>Price</label>
-        <input type="text" id="editItemPrice" placeholder="E.g., ₹155 or $10" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px;">
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="editItemDescription" placeholder="Enter item description" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; min-height: 80px; resize: vertical;"></textarea>
-      </div>
-    </div>
-    <div class="edit-modal-footer">
-      <button class="edit-modal-btn edit-modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
-      <button class="edit-modal-btn edit-modal-btn-save" onclick="saveEditedItem()">Save Changes</button>
-    </div>
-  </div>
-</div>
+<script>
+// ========================================
+// MENU MANAGEMENT JAVASCRIPT - EMBEDDED
+// ========================================
 
-<script src="admin-script.js"></script>
+let manualMenuData = {
+  specials: {
+    today: { enabled: false, items: [] },
+    chef: { enabled: false, items: [] },
+    new: { enabled: false, items: [] },
+    week: { enabled: false, items: [] },
+    festive: { enabled: false, name: '', items: [] }
+  },
+  categories: []
+};
+
+let categoryCounter = 0;
+let itemCounter = 0;
+
+console.log('✅ Menu Management Script Loaded');
+
+// Setup event listeners immediately
+document.getElementById('enableTodaySpecial').addEventListener('change', function() {
+  toggleSpecialSection('today');
+});
+
+document.getElementById('enableChefSpecial').addEventListener('change', function() {
+  toggleSpecialSection('chef');
+});
+
+document.getElementById('enableNewItems').addEventListener('change', function() {
+  toggleSpecialSection('new');
+});
+
+document.getElementById('enableWeekSpecial').addEventListener('change', function() {
+  toggleSpecialSection('week');
+});
+
+document.getElementById('enableFestiveSpecial').addEventListener('change', function() {
+  toggleSpecialSection('festive');
+});
+
+// Navigation
+function goBackToAdmin() {
+  if (window.parent && window.parent.navigate && window.currentRestaurantId) {
+    window.parent.navigate('/r/' + window.currentRestaurantId + '/admin');
+  } else if (typeof navigate !== 'undefined' && window.currentRestaurantId) {
+    navigate('/r/' + window.currentRestaurantId + '/admin');
+  } else {
+    window.history.back();
+  }
+}
+
+// Toggle Special Sections
+function toggleSpecialSection(type) {
+  const checkboxId = 'enable' + (type === 'festive' ? 'Festive' : type.charAt(0).toUpperCase() + type.slice(1)) + 'Special';
+  const checkbox = document.getElementById(checkboxId);
+  const form = document.getElementById(`${type}SpecialForm`);
+  
+  if (checkbox && form) {
+    if (checkbox.checked) {
+      form.style.display = 'block';
+      manualMenuData.specials[type].enabled = true;
+      console.log(`✅ ${type} special enabled`);
+    } else {
+      form.style.display = 'none';
+      manualMenuData.specials[type].enabled = false;
+      console.log(`❌ ${type} special disabled`);
+    }
+  }
+}
+
+// Add Item to Special Category
+function addItemToCategory(categoryType) {
+  console.log('➕ Adding item to:', categoryType);
+  const itemId = `item-${categoryType}-${itemCounter++}`;
+  const container = document.getElementById(`${categoryType}SpecialItems`);
+  
+  if (!container) {
+    console.error('Container not found for:', categoryType);
+    alert('Error: Container not found');
+    return;
+  }
+  
+  const itemDiv = document.createElement('div');
+  itemDiv.id = itemId;
+  itemDiv.style.cssText = 'background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #e0e0e0;';
+  itemDiv.innerHTML = `
+    <div style="display: grid; gap: 10px;">
+      <input type="text" placeholder="Item Name *" id="${itemId}-name" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
+      <input type="text" placeholder="Price (e.g., ₹150)" id="${itemId}-price" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
+      <textarea placeholder="Description (optional)" id="${itemId}-desc" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; min-height: 60px; resize: vertical;"></textarea>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="saveItemToCategory('${categoryType}', '${itemId}')" style="flex: 1; padding: 8px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+          ✓ Save Item
+        </button>
+        <button onclick="removeItemForm('${itemId}')" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
+          🗑️
+        </button>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(itemDiv);
+  console.log('✅ Item form added:', itemId);
+}
+
+// Save Item
+function saveItemToCategory(categoryType, itemId) {
+  const name = document.getElementById(`${itemId}-name`)?.value.trim();
+  const price = document.getElementById(`${itemId}-price`)?.value.trim();
+  const desc = document.getElementById(`${itemId}-desc`)?.value.trim();
+  
+  if (!name) {
+    alert('Item name is required!');
+    return;
+  }
+  
+  const item = { name, price, description: desc };
+  manualMenuData.specials[categoryType].items.push(item);
+  
+  const itemDiv = document.getElementById(itemId);
+  if (itemDiv) {
+    itemDiv.style.background = 'white';
+    itemDiv.style.border = '2px solid #28a745';
+    itemDiv.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div style="flex: 1;">
+          <div style="font-weight: 600; color: #333; font-size: 15px;">${name}</div>
+          ${price ? `<div style="color: #667eea; font-weight: 600; margin-top: 4px;">${price}</div>` : ''}
+          ${desc ? `<div style="color: #666; font-size: 13px; margin-top: 6px;">${desc}</div>` : ''}
+        </div>
+        <button onclick="deleteItemFromCategory('${categoryType}', '${itemId}')" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+          🗑️ Delete
+        </button>
+      </div>
+    `;
+  }
+  console.log('✅ Item saved:', name);
+}
+
+// Remove/Delete Items
+function removeItemForm(itemId) {
+  document.getElementById(itemId)?.remove();
+}
+
+function deleteItemFromCategory(categoryType, itemId) {
+  if (!confirm('Delete this item?')) return;
+  const itemDiv = document.getElementById(itemId);
+  if (!itemDiv) return;
+  const name = itemDiv.querySelector('div > div')?.textContent;
+  const index = manualMenuData.specials[categoryType].items.findIndex(item => item.name === name);
+  if (index > -1) manualMenuData.specials[categoryType].items.splice(index, 1);
+  itemDiv.remove();
+}
+
+// Add New Category
+function addNewCategory() {
+  const catId = `category-${categoryCounter++}`;
+  const container = document.getElementById('manualCategoriesContainer');
+  
+  if (!container) return;
+  
+  const catDiv = document.createElement('div');
+  catDiv.id = catId;
+  catDiv.style.cssText = 'background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #e0e0e0;';
+  catDiv.innerHTML = `
+    <div style="margin-bottom: 15px;">
+      <input type="text" placeholder="Category Name (e.g., Appetizers)" id="${catId}-name" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 16px; font-weight: 600;">
+    </div>
+    <button onclick="addItemToRegularCategory('${catId}')" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 10px;">
+      ➕ Add Item
+    </button>
+    <button onclick="deleteCategory('${catId}')" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+      🗑️ Delete Category
+    </button>
+    <div id="${catId}-items" style="margin-top: 15px;"></div>
+  `;
+  
+  container.appendChild(catDiv);
+  manualMenuData.categories.push({ id: catId, name: '', items: [] });
+}
+
+// Add Item to Regular Category (similar functions as special categories)
+function addItemToRegularCategory(catId) {
+  const itemId = `item-${catId}-${itemCounter++}`;
+  const container = document.getElementById(`${catId}-items`);
+  if (!container) return;
+  
+  const itemDiv = document.createElement('div');
+  itemDiv.id = itemId;
+  itemDiv.style.cssText = 'background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #e0e0e0;';
+  itemDiv.innerHTML = `
+    <div style="display: grid; gap: 10px;">
+      <input type="text" placeholder="Item Name *" id="${itemId}-name" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
+      <input type="text" placeholder="Price" id="${itemId}-price" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px;">
+      <textarea placeholder="Description" id="${itemId}-desc" style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; min-height: 60px;"></textarea>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="saveItemToRegularCategory('${catId}', '${itemId}')" style="flex: 1; padding: 8px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✓ Save</button>
+        <button onclick="removeItemForm('${itemId}')" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+      </div>
+    </div>
+  `;
+  container.appendChild(itemDiv);
+}
+
+function saveItemToRegularCategory(catId, itemId) {
+  const name = document.getElementById(`${itemId}-name`)?.value.trim();
+  const price = document.getElementById(`${itemId}-price`)?.value.trim();
+  const desc = document.getElementById(`${itemId}-desc`)?.value.trim();
+  if (!name) { alert('Item name required!'); return; }
+  const item = { name, price, description: desc };
+  const category = manualMenuData.categories.find(cat => cat.id === catId);
+  if (category) category.items.push(item);
+  const itemDiv = document.getElementById(itemId);
+  if (itemDiv) {
+    itemDiv.style.background = 'white';
+    itemDiv.style.border = '2px solid #28a745';
+    itemDiv.innerHTML = `
+      <div style="display: flex; justify-content: space-between;">
+        <div style="flex: 1;">
+          <div style="font-weight: 600;">${name}</div>
+          ${price ? `<div style="color: #667eea; font-weight: 600;">${price}</div>` : ''}
+          ${desc ? `<div style="color: #666; font-size: 13px;">${desc}</div>` : ''}
+        </div>
+        <button onclick="deleteRegularItem('${catId}', '${itemId}')" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+      </div>
+    `;
+  }
+}
+
+function deleteRegularItem(catId, itemId) {
+  if (!confirm('Delete?')) return;
+  const itemDiv = document.getElementById(itemId);
+  if (!itemDiv) return;
+  const name = itemDiv.querySelector('div > div')?.textContent;
+  const category = manualMenuData.categories.find(cat => cat.id === catId);
+  if (category) {
+    const index = category.items.findIndex(item => item.name === name);
+    if (index > -1) category.items.splice(index, 1);
+  }
+  itemDiv.remove();
+}
+
+function deleteCategory(catId) {
+  if (!confirm('Delete category?')) return;
+  const index = manualMenuData.categories.findIndex(cat => cat.id === catId);
+  if (index > -1) manualMenuData.categories.splice(index, 1);
+  document.getElementById(catId)?.remove();
+}
+
+// Preview & Save
+function previewManualMenu() {
+  console.log('📋 Previewing menu...');
+  
+  // Update category names
+  manualMenuData.categories.forEach(cat => {
+    const nameInput = document.getElementById(cat.id + '-name');
+    if (nameInput) cat.name = nameInput.value.trim() || 'Untitled';
+  });
+  
+  if (manualMenuData.specials.festive.enabled) {
+    const festiveNameInput = document.getElementById('festiveSpecialName');
+    if (festiveNameInput) manualMenuData.specials.festive.name = festiveNameInput.value.trim() || 'Festive Special';
+  }
+  
+  // Validate
+  let hasItems = false;
+  for (const key in manualMenuData.specials) {
+    if (manualMenuData.specials[key].enabled && manualMenuData.specials[key].items.length > 0) {
+      hasItems = true;
+      break;
+    }
+  }
+  if (!hasItems) {
+    for (const cat of manualMenuData.categories) {
+      if (cat.items.length > 0) {
+        hasItems = true;
+        break;
+      }
+    }
+  }
+  
+  if (!hasItems) {
+    alert('⚠️ Please add at least one menu item!');
+    return;
+  }
+  
+  // Build final data
+  const finalData = {
+    lastUpdated: new Date().toISOString(),
+    restaurantName: window.currentRestaurant?.name || "Your Restaurant",
+    specialCategories: [],
+    regularCategories: []
+  };
+  
+  const iconMap = { today: '🌅', chef: '👨‍🍳', new: '🆕', week: '📅', festive: '🎉' };
+  const gradientMap = {
+    today: { start: '#f093fb', end: '#f5576c' },
+    chef: { start: '#fa709a', end: '#fee140' },
+    new: { start: '#a8edea', end: '#fed6e3' },
+    week: { start: '#ffecd2', end: '#fcb69f' },
+    festive: { start: '#ff9a9e', end: '#fecfef' }
+  };
+  const nameMap = {
+    today: "Today's Special",
+    chef: "Chef's Special",
+    new: "New Items",
+    week: "This Week's Special",
+    festive: manualMenuData.specials.festive.name || 'Festive Special'
+  };
+  
+  // Add specials
+  for (const key in manualMenuData.specials) {
+    if (manualMenuData.specials[key].enabled && manualMenuData.specials[key].items.length > 0) {
+      finalData.specialCategories.push({
+        type: key,
+        name: nameMap[key],
+        priority: finalData.specialCategories.length + 1,
+        icon: iconMap[key],
+        gradientStart: gradientMap[key].start,
+        gradientEnd: gradientMap[key].end,
+        items: manualMenuData.specials[key].items
+      });
+    }
+  }
+  
+  // Add regular categories
+  const defaultGradients = [
+    { start: '#667eea', end: '#764ba2' },
+    { start: '#f093fb', end: '#f5576c' },
+    { start: '#a8edea', end: '#fed6e3' },
+    { start: '#ffecd2', end: '#fcb69f' }
+  ];
+  
+  manualMenuData.categories.forEach((cat, idx) => {
+    if (cat.items.length > 0) {
+      const gradient = defaultGradients[idx % defaultGradients.length];
+      finalData.regularCategories.push({
+        name: cat.name,
+        priority: finalData.specialCategories.length + finalData.regularCategories.length + 1,
+        icon: '🍽️',
+        gradientStart: gradient.start,
+        gradientEnd: gradient.end,
+        items: cat.items
+      });
+    }
+  });
+  
+  // Save
+  try {
+    localStorage.setItem('restaurantMenu', JSON.stringify(finalData));
+    console.log('✅ Saved to localStorage');
+    
+    // If in QueueApp context
+    if (window.currentRestaurantId && window.parent.DB && window.parent.db) {
+      window.parent.DB.restaurants[window.currentRestaurantId].menuData = finalData;
+      window.parent.DB.save();
+      
+      window.parent.db.collection('restaurants').doc(window.currentRestaurantId).update({
+        menuData: finalData,
+        menuLastUpdated: new Date().toISOString()
+      }).then(() => {
+        alert('✅ Menu saved successfully!');
+        setTimeout(() => goBackToAdmin(), 2000);
+      }).catch(err => {
+        alert('✅ Saved locally!\n⚠️ Cloud sync failed.');
+      });
+    } else {
+      alert('✅ Menu saved!');
+    }
+  } catch (error) {
+    alert('❌ Error: ' + error.message);
+  }
+}
+
+console.log('✅ All functions loaded');
+</script>
+
 </body>
 </html>
