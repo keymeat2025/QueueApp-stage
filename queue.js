@@ -297,7 +297,7 @@ async function showQueueStatus(rid, queueNumber) {
                 </div>
               </div>
               <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-                <button onclick="navigate('/r/${rid}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success);display:flex;align-items:center;gap:.375rem">
+                <button onclick="navigate('/r/${rid}/admin')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success);display:flex;align-items:center;gap:.375rem">
                   <span style="font-size:1.1rem">🏠</span>
                   <span>Home</span>
                 </button>
