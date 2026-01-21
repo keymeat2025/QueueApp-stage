@@ -1,4 +1,3 @@
-
 // ============================================================================
 // QUEUEAPP - QUEUE.JS
 // Customer Queue Operations Module
@@ -289,7 +288,7 @@ async function showQueueStatus(rid, queueNumber) {
       render(`
         <div style="min-height:100vh;background:${bgColor};position:relative">
           
-          <!-- STICKY HEADER -->
+          <!-- STICKY HEADER WITH HOME BUTTON -->
           <div style="position:sticky;top:0;background:rgba(0,0,0,.3);backdrop-filter:blur(10px);padding:1rem;z-index:100;border-bottom:3px solid white">
             <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
               <div style="color:white">
@@ -298,6 +297,10 @@ async function showQueueStatus(rid, queueNumber) {
                 </div>
               </div>
               <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                <button onclick="navigate('/r/${rid}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success);display:flex;align-items:center;gap:.375rem">
+                  <span style="font-size:1.1rem">🏠</span>
+                  <span>Home</span>
+                </button>
                 <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success)">
                   📺 Display
                 </button>
@@ -329,7 +332,7 @@ async function showQueueStatus(rid, queueNumber) {
       render(`
         <div style="min-height:100vh;background:${bgColor};position:relative">
           
-          <!-- STICKY HEADER -->
+          <!-- STICKY HEADER WITH HOME BUTTON -->
           <div style="position:sticky;top:0;background:rgba(0,0,0,.3);backdrop-filter:blur(10px);padding:1rem;z-index:100;border-bottom:3px solid white">
             <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
               <div style="color:white">
@@ -338,6 +341,10 @@ async function showQueueStatus(rid, queueNumber) {
                 </div>
               </div>
               <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                <button onclick="navigate('/r/${rid}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--primary);display:flex;align-items:center;gap:.375rem">
+                  <span style="font-size:1.1rem">🏠</span>
+                  <span>Home</span>
+                </button>
                 <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--primary)">
                   📺 Display
                 </button>
