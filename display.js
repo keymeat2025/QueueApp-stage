@@ -1,4 +1,3 @@
-
 // ============================================================================
 // QUEUEAPP - DISPLAY.JS (ENHANCED WITH UI TOGGLES)
 // Live Display Screen & QR Controls Module with Customizable UI Options
@@ -356,8 +355,17 @@ async function showDisplay(rid, customerQueueNumber) {
         `}
         
         <div class="container">
-          <div class="text-center mb" style="padding-bottom:clamp(1rem,2vw,2rem);border-bottom:4px solid var(--primary)">
-            <h1 style="color:var(--primary)">${restaurant.name}</h1>
+          <!-- HEADER WITH HOME BUTTON -->
+          <div class="text-center mb" style="padding-bottom:clamp(1rem,2vw,2rem);border-bottom:4px solid var(--primary);position:relative">
+            ${customerQueueNumber ? '' : `
+              <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:flex-end;padding:.5rem">
+                <button onclick="navigate('/r/${rid}')" class="btn btn-primary" style="font-size:clamp(.75rem,2vw,1rem);padding:clamp(.5rem,1.5vw,1rem) clamp(1rem,2.5vw,1.5rem);display:flex;align-items:center;gap:.5rem;background:var(--primary);color:white;font-weight:700;box-shadow:0 4px 12px rgba(249,115,22,.4)">
+                  <span style="font-size:clamp(1.1rem,2.5vw,1.5rem)">🏠</span>
+                  <span>Home</span>
+                </button>
+              </div>
+            `}
+            <h1 style="color:var(--primary);margin-top:${customerQueueNumber ? '0' : 'clamp(2.5rem,5vw,4rem)'}">${restaurant.name}</h1>
             <p style="font-size:clamp(1.25rem,3vw,2rem);color:rgba(255,255,255,.7)">Queue Management</p>
             <div style="font-size:clamp(2rem,5vw,3rem);color:var(--primary);font-weight:700;margin-top:.5rem">
               ${new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}
