@@ -300,9 +300,6 @@ async function showQueueStatus(rid, queueNumber) {
                 <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success)">
                   📺 Display
                 </button>
-                <button onclick="window.history.back()" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem">
-                  ← Back
-                </button>
               </div>
             </div>
           </div>
@@ -342,9 +339,6 @@ async function showQueueStatus(rid, queueNumber) {
               <div style="display:flex;gap:.5rem;flex-wrap:wrap">
                 <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--primary)">
                   📺 Display
-                </button>
-                <button onclick="window.history.back()" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem">
-                  ← Back
                 </button>
               </div>
             </div>
