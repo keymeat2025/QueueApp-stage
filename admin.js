@@ -1,8 +1,9 @@
 // ============================================================================
-// QUEUEAPP - ADMIN.JS (WITH MENU MANAGEMENT + EXPIRY PI CHART)
+// QUEUEAPP - ADMIN.JS (CLEANED - MENU MANAGEMENT REMOVED)
 // Restaurant & Platform Admin Module
-// Includes: Admin dashboards, payments, cleanup, QR poster, upgrade modals, MENU MANAGEMENT
-// NEW: Circular Progress Chart for Days Remaining + Menu Upload Feature
+// Includes: Admin dashboards, payments, cleanup, QR poster, upgrade modals
+// NEW: Circular Progress Chart for Days Remaining
+// REMOVED: All Menu Management Features
 // ============================================================================
 
 // ============================================================================
@@ -94,9 +95,7 @@ async function showRestaurantAdmin(rid) {
         const now = Date.now();
         const expiryDate = restaurant.planExpiryDate;
         const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-        //const totalDays = 30; // Assuming 30-day subscription
         const totalDays = calculateTotalDays(restaurant);
-        //const daysElapsed = totalDays - daysRemaining;
         const daysElapsed = Math.max(0, totalDays - daysRemaining);
         const percentageRemaining = Math.max(0, Math.min(100, (daysRemaining / totalDays) * 100));
         const expiryDateFormatted = new Date(expiryDate).toLocaleDateString('en-US', { 
@@ -321,9 +320,6 @@ async function showRestaurantAdmin(rid) {
               <button onclick="downloadQRCode('${rid}')" class="btn btn-secondary">💾 Download QR</button>
               <button onclick="copyQRLink('${rid}')" class="btn" style="background:#2563eb;color:white">🔗 Copy Link</button>
               <button onclick="showQRPosterModal('${rid}')" class="btn btn-success">📋 Print Poster</button>
-              <button onclick="showAddMenuModal('${rid}')" class="btn" style="background:var(--primary);color:white">
-                🍽️ ${restaurant.menu ? 'Manage' : 'Add'} Menu
-              </button>
             </div>
             <div class="mt">
               <p style="font-size:.875rem;color:#1e40af;font-weight:600">💡 How to use:</p>
@@ -436,277 +432,6 @@ const logout = (rid) => {
   alert('✅ Logged out');
   navigate('/');
 };
-
-// ============================================================================
-// MENU MANAGEMENT FUNCTIONS
-// ============================================================================
-
-/**
- * Shows modal to upload restaurant menu
- */
-function showAddMenuModal(rid) {
-  const restaurant = DB.restaurants[rid];
-  const hasMenu = restaurant && restaurant.menu;
-  
-  const modal = `
-    <div class="modal-overlay" onclick="closeModal(event)">
-      <div class="modal-content">
-        <h2 style="margin-bottom:1rem">
-          ${hasMenu ? '🔄 Update Menu' : '🍽️ Add Menu'}
-        </h2>
-        
-        ${hasMenu ? `
-          <div class="alert alert-info" style="margin-bottom:1.5rem">
-            <p style="margin:0;font-weight:600">📋 Current Menu</p>
-            <p style="margin:.5rem 0 0 0;font-size:.875rem">
-              ${restaurant.menu.name} • Uploaded ${new Date(restaurant.menu.uploadedAt).toLocaleDateString()}
-            </p>
-          </div>
-        ` : ''}
-        
-        <p style="color:var(--gray-600);margin-bottom:1.5rem">
-          Upload your restaurant menu (PDF or Image formats supported)
-        </p>
-        
-        <div class="space-y">
-          <div>
-            <label style="display:block;font-weight:600;margin-bottom:.5rem;color:var(--gray-700)">
-              Select Menu File
-            </label>
-            <input 
-              type="file" 
-              id="menuFile" 
-              accept="image/*,.pdf"
-              style="margin-bottom:0"
-            />
-            <p style="font-size:.75rem;color:var(--gray-600);margin-top:.5rem">
-              Supported: JPG, PNG, PDF • Max 5MB recommended
-            </p>
-          </div>
-          
-          ${hasMenu ? `
-            <div style="border-top:2px solid var(--gray-200);padding-top:1rem;margin-top:1rem">
-              <button 
-                onclick="viewMenu('${rid}')" 
-                class="btn btn-secondary w-full"
-                style="margin-bottom:.75rem"
-              >
-                👁️ Preview Current Menu
-              </button>
-              <button 
-                onclick="deleteMenu('${rid}')" 
-                class="btn btn-danger w-full"
-              >
-                🗑️ Delete Menu
-              </button>
-            </div>
-          ` : ''}
-          
-          <div class="flex gap-1" style="margin-top:1.5rem">
-            <button 
-              onclick="uploadMenu('${rid}')" 
-              class="btn btn-primary"
-              style="flex:1"
-            >
-              ${hasMenu ? '🔄 Update' : '📤 Upload'} Menu
-            </button>
-            <button 
-              onclick="closeModal()" 
-              class="btn btn-secondary"
-              style="flex:1"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', modal);
-}
-
-/**
- * Uploads menu file for restaurant
- */
-function uploadMenu(rid) {
-  const fileInput = document.getElementById('menuFile');
-  const file = fileInput?.files[0];
-  
-  if (!file) {
-    alert('⚠️ Please select a file');
-    return;
-  }
-  
-  // Validate file size (5MB limit)
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    alert('⚠️ File too large! Please select a file under 5MB.');
-    return;
-  }
-  
-  // Validate file type
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-  if (!validTypes.includes(file.type)) {
-    alert('⚠️ Invalid file type! Please upload JPG, PNG, GIF, WEBP, or PDF.');
-    return;
-  }
-  
-  // Show loading state
-  const btn = event.target;
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = '⏳ Uploading...';
-  
-  // Convert to base64 and store
-  const reader = new FileReader();
-  
-  reader.onload = function(e) {
-    const menuData = {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      data: e.target.result,
-      uploadedAt: Date.now()
-    };
-    
-    // Save to local DB
-    if (!DB.restaurants[rid]) {
-      alert('❌ Restaurant not found!');
-      btn.disabled = false;
-      btn.textContent = originalText;
-      return;
-    }
-    
-    DB.restaurants[rid].menu = menuData;
-    DB.save();
-    
-    // Save to Firebase
-    db.collection('restaurants').doc(rid).update({
-      menu: menuData
-    }).then(() => {
-      alert('✅ Menu uploaded successfully!');
-      closeModal();
-      handleRoute();
-    }).catch(err => {
-      alert('❌ Error uploading to server: ' + err.message);
-      btn.disabled = false;
-      btn.textContent = originalText;
-    });
-  };
-  
-  reader.onerror = function() {
-    alert('❌ Error uploading menu. Please try again.');
-    btn.disabled = false;
-    btn.textContent = originalText;
-  };
-  
-  reader.readAsDataURL(file);
-}
-
-/**
- * Views menu in a modal or new tab
- */
-function viewMenu(rid) {
-  const restaurant = DB.restaurants[rid];
-  
-  if (!restaurant || !restaurant.menu) {
-    alert('📋 No menu available for this restaurant');
-    return;
-  }
-  
-  const menu = restaurant.menu;
-  
-  if (menu.type === 'application/pdf') {
-    // Open PDF in new tab
-    const pdfWindow = window.open('');
-    if (pdfWindow) {
-      pdfWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${restaurant.name} - Menu</title>
-          <style>
-            body { margin: 0; padding: 0; }
-            iframe { width: 100%; height: 100vh; border: none; }
-          </style>
-        </head>
-        <body>
-          <iframe src="${menu.data}"></iframe>
-        </body>
-        </html>
-      `);
-    } else {
-      alert('⚠️ Please allow popups to view the PDF menu');
-    }
-  } else {
-    // Show image in modal
-    const modal = `
-      <div class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content" style="max-width:900px">
-          <h2 style="margin-bottom:1rem">${restaurant.name} - Menu</h2>
-          <div style="background:var(--gray-100);padding:1rem;border-radius:1rem;margin-bottom:1rem">
-            <img 
-              src="${menu.data}" 
-              style="width:100%;height:auto;border-radius:.5rem;display:block"
-              alt="Restaurant Menu"
-            />
-          </div>
-          <div class="flex gap-1">
-            <button onclick="downloadMenuImage('${rid}')" class="btn btn-secondary" style="flex:1">
-              📥 Download
-            </button>
-            <button onclick="closeModal()" class="btn btn-primary" style="flex:1">
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modal);
-  }
-}
-
-/**
- * Deletes the menu for a restaurant
- */
-function deleteMenu(rid) {
-  if (!confirm('⚠️ Are you sure you want to delete the menu? This cannot be undone.')) {
-    return;
-  }
-  
-  const restaurant = DB.restaurants[rid];
-  if (restaurant && restaurant.menu) {
-    delete restaurant.menu;
-    DB.save();
-    
-    // Delete from Firebase
-    db.collection('restaurants').doc(rid).update({
-      menu: firebase.firestore.FieldValue.delete()
-    }).then(() => {
-      alert('✅ Menu deleted successfully!');
-      closeModal();
-      handleRoute();
-    }).catch(err => {
-      alert('❌ Error: ' + err.message);
-    });
-  }
-}
-
-/**
- * Downloads menu image
- */
-function downloadMenuImage(rid) {
-  const restaurant = DB.restaurants[rid];
-  if (!restaurant || !restaurant.menu) return;
-  
-  const link = document.createElement('a');
-  link.href = restaurant.menu.data;
-  link.download = `${restaurant.name.replace(/\s/g, '_')}_menu.${restaurant.menu.name.split('.').pop()}`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
 
 // ============================================================================
 // PAYMENT FLOWS
@@ -910,7 +635,6 @@ async function submitPaymentProof(rid) {
       // Don't fail the payment if subscription tracking fails
     }
     
-    //alert('✅ Submitted! Verification takes 2-24 hours.\n\nTransaction ID: ' + internalTxnId);
     alert(`✅ ${isRenewal ? 'Renewal' : 'Payment'} submitted!\n\nSubscription: ${subscriptionId}\nCycle: #${cycleNumber}\nTransaction: ${internalTxnId}\n\nVerification takes 2-24 hours.`);
     navigate(`/r/${rid}/admin`);
   };
@@ -1501,11 +1225,6 @@ window.upgradeFromProgressive = function(rid) {
 window.showRestaurantAdmin = showRestaurantAdmin;
 window.allocateTable = allocateTable;
 window.logout = logout;
-window.showAddMenuModal = showAddMenuModal;
-window.uploadMenu = uploadMenu;
-window.viewMenu = viewMenu;
-window.deleteMenu = deleteMenu;
-window.downloadMenuImage = downloadMenuImage;
 window.showPaymentPage = showPaymentPage;
 window.showUploadScreenshot = showUploadScreenshot;
 window.submitPaymentProof = submitPaymentProof;
@@ -1519,6 +1238,6 @@ window.showQRPosterModal = showQRPosterModal;
 window.downloadQRPoster = downloadQRPoster;
 window.closePosterModal = closePosterModal;
 
-console.log('✅ QueueApp Admin Module Loaded');
+console.log('✅ QueueApp Admin Module Loaded (Cleaned)');
 console.log('📊 Premium Expiry PI Chart: ENABLED');
-console.log('🍽️ Menu Management: ENABLED');
+console.log('🍽️ Menu Management: REMOVED');
