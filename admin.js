@@ -921,18 +921,18 @@ function showQRPosterModal(rid) {
         <div class="poster-powered-by">Powered by <strong>www.queueapp.in</strong></div>
       </div>
       
-      <div class="poster-actions">
-        <div style="position:relative;display:inline-block;width:100%;max-width:300px">
-          <select id="posterSize" class="btn btn-success w-full" style="appearance:none;padding-right:2.5rem;cursor:pointer;text-align:left">
+      <div class="poster-actions" style="display:flex;gap:1rem;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:2rem">
+        <div style="position:relative;display:inline-block;flex:1;max-width:400px;min-width:250px">
+          <select id="posterSize" class="btn btn-success" style="width:100%;appearance:none;padding-right:2.5rem;cursor:pointer;text-align:left;background:var(--success);color:white;border:none">
             <option value="">💾 Select Size & Download</option>
             <option value="standee">🏪 Standee 4×6" (Paytm style) ⭐</option>
             <option value="a5">📱 A5 - Compact (5.8×8.3")</option>
             <option value="a4">📄 A4 - Standard (8.3×11.7")</option>
             <option value="a3">📋 A3 - Large (11.7×16.5")</option>
           </select>
-          <div style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:1.2rem">▼</div>
+          <div style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:1.2rem;color:white">▼</div>
         </div>
-        <button onclick="closePosterModal()" class="btn btn-secondary mt">✕ Close</button>
+        <button onclick="closePosterModal()" class="btn btn-secondary" style="min-width:120px">✕ Close</button>
       </div>
     </div>
   `;
