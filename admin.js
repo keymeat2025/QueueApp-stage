@@ -779,6 +779,7 @@ function renderPlatformAdminDashboard() {
                     <p style="font-size:.875rem">ID: ${id} • ${r.city} • ${r.queue?.length || 0} customers</p>
                   </div>
                   <div class="flex gap-1 flex-wrap">
+                    <button onclick="showQRPosterModal('${id}')" class="btn btn-success">📋 Poster</button>
                     <button onclick="navigate('/r/${id}/admin')" class="btn btn-secondary">Admin</button>
                     <button onclick="navigate('/r/${id}/display')" class="btn" style="background:#2563eb;color:white">Display</button>
                   </div>
