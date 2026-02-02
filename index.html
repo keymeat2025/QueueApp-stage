@@ -249,6 +249,48 @@ input[type="range"]{-webkit-appearance:auto !important;appearance:auto !importan
     min-width: auto !important;
   }
 }
+/* Poster Modal Button Alignment */
+.poster-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.poster-actions > div {
+  position: relative;
+  display: inline-block;
+  flex: 1;
+  max-width: 400px;
+  min-width: 250px;
+}
+
+.poster-actions select {
+  width: 100%;
+  appearance: none;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.poster-actions .btn {
+  min-width: 120px;
+}
+
+@media (max-width: 600px) {
+  .poster-actions {
+    flex-direction: column !important;
+  }
+  
+  .poster-actions > div,
+  .poster-actions > button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: auto !important;
+  }
+}
 </style>
 </head>
 <body>
