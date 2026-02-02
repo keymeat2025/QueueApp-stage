@@ -1,10 +1,9 @@
-
 // ============================================================================
-// QUEUEAPP - ADMIN.JS (CLEANED - MENU MANAGEMENT REMOVED)
+// QUEUEAPP - ADMIN.JS (CLEANED - SIMPLE DROPDOWN POSTER SYSTEM)
 // Restaurant & Platform Admin Module
 // Includes: Admin dashboards, payments, cleanup, QR poster, upgrade modals
-// NEW: Circular Progress Chart for Days Remaining
-// REMOVED: All Menu Management Features
+// NEW: Circular Progress Chart for Days Remaining + Simple Dropdown Poster
+// REMOVED: All Menu Management Features + Old Modal System
 // ============================================================================
 
 // ============================================================================
@@ -894,7 +893,7 @@ async function adminLogout() {
 }
 
 // ============================================================================
-// QR POSTER MODAL
+// QR POSTER MODAL - SIMPLE DROPDOWN VERSION
 // ============================================================================
 
 function showQRPosterModal(rid) {
@@ -923,10 +922,17 @@ function showQRPosterModal(rid) {
       </div>
       
       <div class="poster-actions">
-        <button onclick="showSizeSelectionModal('${rid}', '${restaurant.name}')" class="btn btn-success">
-          💾 Download Poster
-        </button>
-        <button onclick="closePosterModal()" class="btn btn-secondary">✕ Close</button>
+        <div style="position:relative;display:inline-block;width:100%;max-width:300px">
+          <select id="posterSize" class="btn btn-success w-full" style="appearance:none;padding-right:2.5rem;cursor:pointer;text-align:left">
+            <option value="">💾 Select Size & Download</option>
+            <option value="standee">🏪 Standee 4×6" (Paytm style) ⭐</option>
+            <option value="a5">📱 A5 - Compact (5.8×8.3")</option>
+            <option value="a4">📄 A4 - Standard (8.3×11.7")</option>
+            <option value="a3">📋 A3 - Large (11.7×16.5")</option>
+          </select>
+          <div style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:1.2rem">▼</div>
+        </div>
+        <button onclick="closePosterModal()" class="btn btn-secondary mt">✕ Close</button>
       </div>
     </div>
   `;
@@ -943,101 +949,19 @@ function showQRPosterModal(rid) {
       correctLevel: QRCode.CorrectLevel.H
     });
   }, 100);
+  
+  setTimeout(() => {
+    document.getElementById('posterSize').addEventListener('change', function() {
+      const size = this.value;
+      if (size) {
+        downloadQRPoster(rid, restaurant.name, size);
+        this.value = '';
+      }
+    });
+  }, 200);
 }
 
-// NEW: Show size selection modal
-function showSizeSelectionModal(rid, restaurantName) {
-  const sizeModal = document.createElement('div');
-  sizeModal.className = 'modal-overlay';
-  sizeModal.id = 'sizeSelectionModal';
-  sizeModal.style.zIndex = '10001'; // Higher than poster modal
-  
-  sizeModal.innerHTML = `
-    <div class="modal-content" style="max-width:600px">
-      <h2 style="text-align:center;margin-bottom:1rem">📐 Select Poster Size</h2>
-      <p style="text-align:center;color:var(--gray-600);margin-bottom:2rem;font-size:.875rem">
-        Choose the size that matches your display needs
-      </p>
-      
-      <div class="space-y">
-        <!-- STANDEE SIZE (DEFAULT - Like Paytm/GPay) -->
-        <div class="card" style="border:3px solid var(--success);cursor:pointer;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);position:relative" 
-             onclick="generatePosterWithSize('${rid}','${restaurantName}','standee')">
-          <span style="position:absolute;top:-12px;right:10px;background:var(--success);color:white;padding:.25rem .75rem;border-radius:999px;font-size:.75rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.2)">
-            ⭐ RECOMMENDED
-          </span>
-          <div style="display:flex;align-items:center;gap:1rem;padding:.5rem">
-            <div style="font-size:2.5rem">🏪</div>
-            <div style="flex:1">
-              <h3 style="margin-bottom:.25rem;color:var(--success)">Table Standee (Like Paytm/GPay)</h3>
-              <p style="font-size:.875rem;color:var(--gray-700);margin:0;font-weight:600">4" × 6" (10cm × 15cm)</p>
-              <p style="font-size:.75rem;color:var(--gray-600);margin:.25rem 0 0 0">
-                Perfect for counter/table display • Industry standard size
-              </p>
-            </div>
-            <div style="background:var(--success);color:white;padding:.5rem 1rem;border-radius:.5rem;font-weight:700;font-size:.875rem">
-              DEFAULT
-            </div>
-          </div>
-        </div>
-        
-        <!-- A5 SIZE (Compact) -->
-        <div class="card" style="border:2px solid var(--gray-300);cursor:pointer" 
-             onclick="generatePosterWithSize('${rid}','${restaurantName}','a5')">
-          <div style="display:flex;align-items:center;gap:1rem;padding:.5rem">
-            <div style="font-size:2rem">📱</div>
-            <div style="flex:1">
-              <h3 style="margin-bottom:.25rem">A5 - Compact</h3>
-              <p style="font-size:.875rem;color:var(--gray-600);margin:0">5.8" × 8.3" (148mm × 210mm)</p>
-              <p style="font-size:.75rem;color:var(--gray-500);margin:.25rem 0 0 0">Small tables, hostess desk</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- A4 SIZE (Standard Print) -->
-        <div class="card" style="border:2px solid var(--primary);cursor:pointer;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%)" 
-             onclick="generatePosterWithSize('${rid}','${restaurantName}','a4')">
-          <div style="display:flex;align-items:center;gap:1rem;padding:.5rem">
-            <div style="font-size:2rem">📄</div>
-            <div style="flex:1">
-              <h3 style="margin-bottom:.25rem;color:var(--primary)">A4 - Standard Print</h3>
-              <p style="font-size:.875rem;color:var(--gray-700);margin:0">8.3" × 11.7" (210mm × 297mm)</p>
-              <p style="font-size:.75rem;color:var(--gray-600);margin:.25rem 0 0 0">Wall mounting, entrance display</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- A3 SIZE (Large) -->
-        <div class="card" style="border:2px solid var(--gray-300);cursor:pointer" 
-             onclick="generatePosterWithSize('${rid}','${restaurantName}','a3')">
-          <div style="display:flex;align-items:center;gap:1rem;padding:.5rem">
-            <div style="font-size:2rem">📋</div>
-            <div style="flex:1">
-              <h3 style="margin-bottom:.25rem">A3 - Large Display</h3>
-              <p style="font-size:.875rem;color:var(--gray-600);margin:0">11.7" × 16.5" (297mm × 420mm)</p>
-              <p style="font-size:.75rem;color:var(--gray-500);margin:.25rem 0 0 0">Main entrance, large restaurants</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="alert alert-info mt" style="font-size:.875rem">
-        💡 <strong>Tip:</strong> Most Indian restaurants use the <strong>Standee size (4×6)</strong> - 
-        it fits perfectly on tables and counters, just like Paytm/GPay QR codes!
-      </div>
-      
-      <button onclick="closeSizeSelectionModal()" class="btn btn-secondary w-full mt">Cancel</button>
-    </div>
-  `;
-  
-  document.body.appendChild(sizeModal);
-}
-
-// NEW: Generate poster with selected size (or default to standee)
-window.generatePosterWithSize = function(rid, restaurantName, size = 'standee') {
-  // Close size selection modal
-  closeSizeSelectionModal();
-  
+function downloadQRPoster(rid, restaurantName, size = 'standee') {
   const element = document.getElementById('posterTemplate');
   
   if (!element) {
@@ -1051,62 +975,33 @@ window.generatePosterWithSize = function(rid, restaurantName, size = 'standee') 
     return;
   }
   
-  // Define size configurations (matching Indian standards)
   const sizeConfigs = {
-    'standee': {
-      width: 1200,   // 4" at 300 DPI
-      height: 1800,  // 6" at 300 DPI
-      label: 'Standee-4x6',
-      description: 'Table Standee (Like Paytm/GPay)'
-    },
-    'a5': {
-      width: 1748,   // 5.8" at 300 DPI
-      height: 2480,  // 8.3" at 300 DPI
-      label: 'A5',
-      description: 'A5 Compact'
-    },
-    'a4': {
-      width: 2480,   // 8.3" at 300 DPI
-      height: 3508,  // 11.7" at 300 DPI
-      label: 'A4',
-      description: 'A4 Standard'
-    },
-    'a3': {
-      width: 3508,   // 11.7" at 300 DPI
-      height: 4961,  // 16.5" at 300 DPI
-      label: 'A3',
-      description: 'A3 Large'
-    }
+    'standee': { width: 1200, height: 1800, label: 'Standee-4x6', name: 'Table Standee' },
+    'a5': { width: 1748, height: 2480, label: 'A5', name: 'A5 Compact' },
+    'a4': { width: 2480, height: 3508, label: 'A4', name: 'A4 Standard' },
+    'a3': { width: 3508, height: 4961, label: 'A3', name: 'A3 Large' }
   };
   
-  const config = sizeConfigs[size] || sizeConfigs['standee']; // Default to standee if invalid
+  const config = sizeConfigs[size] || sizeConfigs['standee'];
   
-  // Show loading overlay
   const loadingOverlay = document.createElement('div');
-  loadingOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10002';
+  loadingOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10002';
   loadingOverlay.innerHTML = `
-    <div style="text-align:center;background:white;padding:2rem;border-radius:1rem;max-width:400px">
-      <div style="font-size:4rem;margin-bottom:1rem">📸</div>
-      <h3 style="margin-bottom:.5rem">Generating High-Quality Poster...</h3>
-      <p style="color:var(--gray-600);font-size:.875rem;margin-bottom:1rem">
-        ${config.description} • ${config.width}×${config.height}px
-      </p>
-      <div style="width:100%;height:8px;background:var(--gray-200);border-radius:999px;overflow:hidden">
+    <div style="text-align:center;background:white;padding:2rem 3rem;border-radius:1rem;max-width:350px">
+      <div style="font-size:3.5rem;margin-bottom:1rem">📸</div>
+      <h3 style="margin-bottom:.75rem;font-size:1.25rem">Generating Poster...</h3>
+      <p style="color:var(--gray-600);font-size:.875rem;margin:0">${config.name}</p>
+      <div style="width:100%;height:6px;background:var(--gray-200);border-radius:999px;overflow:hidden;margin-top:1.5rem">
         <div style="width:60%;height:100%;background:var(--success);animation:pulse 1.5s infinite"></div>
       </div>
-      <p style="font-size:.75rem;color:var(--gray-500);margin-top:1rem">This may take a few seconds...</p>
     </div>
   `;
   document.body.appendChild(loadingOverlay);
   
-  // Calculate scale to achieve target dimensions
   const currentWidth = element.offsetWidth;
   const currentHeight = element.offsetHeight;
-  const scaleX = config.width / currentWidth;
-  const scaleY = config.height / currentHeight;
-  const scale = Math.min(scaleX, scaleY);
+  const scale = Math.min(config.width / currentWidth, config.height / currentHeight);
   
-  // Generate poster
   html2canvas(element, {
     scale: scale,
     useCORS: true,
@@ -1118,20 +1013,13 @@ window.generatePosterWithSize = function(rid, restaurantName, size = 'standee') 
     imageTimeout: 0,
     onclone: (clonedDoc) => {
       const clonedElement = clonedDoc.getElementById('posterTemplate');
-      if (clonedElement) {
-        clonedElement.style.transform = 'scale(1)';
-        // Ensure fonts are loaded
-        clonedElement.style.fontFamily = 'Arial, sans-serif';
-      }
+      if (clonedElement) clonedElement.style.transform = 'scale(1)';
     }
   }).then(canvas => {
     try {
       canvas.toBlob((blob) => {
-        if (!blob) {
-          throw new Error('Failed to create image blob');
-        }
+        if (!blob) throw new Error('Failed to create image blob');
         
-        // Create download link
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         const sanitizedName = restaurantName.replace(/[^a-z0-9]/gi, '-');
@@ -1140,104 +1028,33 @@ window.generatePosterWithSize = function(rid, restaurantName, size = 'standee') 
         
         link.download = filename;
         link.href = url;
-        
-        // Trigger download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        // Clean up
         URL.revokeObjectURL(url);
         loadingOverlay.remove();
         
-        // Show success message
-        showDownloadSuccessModal(config);
+        const successToast = document.createElement('div');
+        successToast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--success);color:white;padding:1rem 2rem;border-radius:.5rem;font-weight:700;z-index:10003;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:slideDown 0.3s ease';
+        successToast.innerHTML = `✅ ${config.name} Downloaded!`;
+        document.body.appendChild(successToast);
+        
+        setTimeout(() => {
+          successToast.style.animation = 'slideUp 0.3s ease';
+          setTimeout(() => successToast.remove(), 300);
+        }, 2500);
         
       }, 'image/png', 1.0);
-      
     } catch (err) {
       console.error('Download error:', err);
       loadingOverlay.remove();
-      alert('❌ Download failed. Please try again or use Print → Save as PDF.');
+      alert('❌ Download failed. Please try again.');
     }
   }).catch(err => {
     console.error('html2canvas error:', err);
     loadingOverlay.remove();
     alert('❌ Failed to generate poster. Please try again or contact support.');
   });
-};
-
-// Show download success modal
-function showDownloadSuccessModal(config) {
-  const successModal = document.createElement('div');
-  successModal.className = 'modal-overlay';
-  successModal.style.zIndex = '10003';
-  successModal.innerHTML = `
-    <div class="modal-content" style="max-width:400px;text-align:center">
-      <div style="font-size:5rem;margin-bottom:1rem;animation:pulse 1.5s infinite">✅</div>
-      <h2 style="color:var(--success);margin-bottom:1rem">Poster Downloaded!</h2>
-      <div class="card" style="background:var(--gray-50);margin-bottom:1.5rem">
-        <p style="font-size:.875rem;color:var(--gray-700);margin:0">
-          <strong>Size:</strong> ${config.description}<br>
-          <strong>Dimensions:</strong> ${config.width} × ${config.height}px<br>
-          <strong>Quality:</strong> 300 DPI (Print-ready)
-        </p>
-      </div>
-      <div class="alert alert-info" style="font-size:.875rem;text-align:left">
-        <p style="font-weight:700;margin-bottom:.5rem">📝 Printing Tips:</p>
-        <ul style="margin:.5rem 0 0 1.5rem;padding:0">
-          <li>Use glossy or matte paper</li>
-          <li>Print at actual size (no scaling)</li>
-          <li>Laminate for durability</li>
-          ${config.label === 'Standee-4x6' ? '<li>Use a table tent stand or acrylic holder</li>' : ''}
-        </ul>
-      </div>
-      <button onclick="closeDownloadSuccessModal()" class="btn btn-success w-full">Done</button>
-    </div>
-  `;
-  document.body.appendChild(successModal);
-}
-
-window.closeSizeSelectionModal = function() {
-  const modal = document.getElementById('sizeSelectionModal');
-  if (modal) modal.remove();
-};
-
-window.closeDownloadSuccessModal = function() {
-  document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
-};
-
-function closePosterModal() {
-  const modal = document.getElementById('posterModal');
-  if (modal) modal.remove();
-  closeSizeSelectionModal();
-  closeDownloadSuccessModal();
-}
-
-// Update the old downloadQRPoster function to use new system with standee as default
-function downloadQRPoster(rid, restaurantName) {
-  // Auto-trigger standee size if called directly
-  generatePosterWithSize(rid, restaurantName, 'standee');
-}
-
-function downloadQRPoster(rid, restaurantName) {
-  if (typeof html2canvas !== 'undefined') {
-    const element = document.getElementById('posterTemplate');
-    html2canvas(element, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      width: element.offsetWidth,
-      height: element.offsetHeight
-    }).then(canvas => {
-      const link = document.createElement('a');
-      const filename = `QueueApp-Poster-${restaurantName.replace(/[^a-z0-9]/gi, '-')}.png`;
-      link.download = filename;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
-  } else {
-    alert('💡 To download as PNG:\n\n1. Use Print button\n2. Select "Save as PDF"\n3. Or right-click the poster and "Save image as..."');
-  }
 }
 
 function closePosterModal() {
@@ -1516,6 +1333,8 @@ window.showQRPosterModal = showQRPosterModal;
 window.downloadQRPoster = downloadQRPoster;
 window.closePosterModal = closePosterModal;
 
-console.log('✅ QueueApp Admin Module Loaded (Cleaned)');
+console.log('✅ QueueApp Admin Module Loaded (Simple Dropdown Poster System)');
 console.log('📊 Premium Expiry PI Chart: ENABLED');
+console.log('📋 Simple Dropdown Poster Download: ENABLED');
 console.log('🍽️ Menu Management: REMOVED');
+console.log('❌ Old Modal System: REMOVED');
