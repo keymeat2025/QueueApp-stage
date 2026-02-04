@@ -919,7 +919,7 @@ function showQRPosterModal(rid) {
           <div id="poster-qr"></div>
         </div>
         
-        <div class="poster-scan-me">👇 SCAN ME 👇</div>
+        <div class="poster-scan-me">👆 SCAN ME 👆</div>
         <div class="poster-powered-by">Powered by <strong>www.queueapp.in</strong></div>
       </div>
       
