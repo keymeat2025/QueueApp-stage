@@ -186,7 +186,7 @@ async function showRestaurantAdmin(rid) {
                   
                   
                   ${daysRemaining <= 15 ? `
-                    <button onclick="navigate('/pricing?action=renew&rid=${rid}')" class="btn btn-primary" style="margin-top:1rem;width:100%">
+                    <button onclick="navigate('/pricing')" class="btn btn-primary" style="margin-top:1rem;width:100%">
                       🔄 Renew Premium Now
                     </button>
                   ` : ''}
