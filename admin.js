@@ -89,8 +89,13 @@ async function showRestaurantAdmin(rid) {
     }
     
     // ===== 📊 PREMIUM EXPIRY PI CHART =====
+
+    // ✅ CHANGE 2: Check if renewal payment is pending
+    const hasRenewalPending = (planStatus === 'pending' && restaurant.paymentProof?.isRenewal);
+    
     let premiumAlert = '';
-    if (currentPlan === 'premium' && planStatus === 'active') {
+    // ✅ CHANGE 2: Don't show expiry warning if renewal is pending
+    if (currentPlan === 'premium' && planStatus === 'active' && !hasRenewalPending) {
       if (restaurant.planExpiryDate) {
         const now = Date.now();
         const expiryDate = restaurant.planExpiryDate;
@@ -179,8 +184,9 @@ async function showRestaurantAdmin(rid) {
                     <strong>Benefits:</strong> Unlimited customers • Auto-cleanup • Analytics
                   </p>
                   
-                  ${daysRemaining <= 7 ? `
-                    <button onclick="navigate('/pricing')" class="btn btn-primary" style="margin-top:1rem;width:100%">
+                  
+                  ${daysRemaining <= 15 ? `
+                    <button onclick="navigate('/pricing?action=renew&rid=${rid}')" class="btn btn-primary" style="margin-top:1rem;width:100%">
                       🔄 Renew Premium Now
                     </button>
                   ` : ''}
@@ -221,7 +227,8 @@ async function showRestaurantAdmin(rid) {
                     Renew now to restore: Unlimited customers • Analytics • Auto-cleanup
                   </p>
                   
-                  <button onclick="navigate('/pricing')" class="btn btn-danger" style="width:100%;font-size:clamp(.875rem,2vw,1rem);padding:clamp(.75rem,2vw,1rem)">
+             
+                  <button onclick="navigate('/pricing?action=renew&rid=${rid}')" class="btn btn-danger" style="width:100%;font-size:clamp(.875rem,2vw,1rem);padding:clamp(.75rem,2vw,1rem)">
                     ⚡ Renew Premium Now
                   </button>
                 </div>
