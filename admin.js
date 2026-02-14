@@ -311,6 +311,7 @@ async function showRestaurantAdmin(rid) {
           
           ${cleanupAlert}
           
+        
           <div class="alert alert-info mb">
             <div class="flex justify-between items-center flex-wrap gap-1">
               <div>
@@ -338,6 +339,9 @@ async function showRestaurantAdmin(rid) {
               </ol>
             </div>
           </div>
+          
+          <!-- MULTI-ZONE SECTION (INJECTED BY multizone.js) -->
+          ${generateMultiZoneUI(rid, restaurant)}  
           
           ${restaurant.plan === 'free' ? `
             <div class="card mb" style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%)">
