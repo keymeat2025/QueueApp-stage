@@ -254,14 +254,19 @@ async function handleJoinQueue(rid) {
   const btn = event.target;
   btn.textContent = 'Joining...';
   btn.disabled = true;
+
+
+  // CAPTURE zone from URL parameter
+  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+  const zone = urlParams.get('zone');
   
   try {
     const result = await FirebaseDB.addToQueue(rid, {
       name: name,
       phone: phone,
-      guests: guests
+      guests: guests,
+      zone: zone  // ← NEW: Pass zone parameter
     });
-    
     if (result.success) {
       // Update localStorage
       const restaurant = DB.restaurants[rid];
