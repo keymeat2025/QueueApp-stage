@@ -377,14 +377,21 @@ const FirebaseDB = {
       
       // Generate queue number
       const queueNumber = `A-${Math.floor(Math.random() * 900) + 100}`;
-      
-      // Create queue item
+  
+
+      // Create queue item (MODIFIED - includes zone field)
       const queueItem = {
         ...customer,
         queueNumber: queueNumber,
         status: 'waiting',
-        joinedAt: new Date().toISOString()
+        joinedAt: new Date().toISOString(),
+        zone: customer.zone || null  // ← NEW FIELD (backward compatible)
       };
+      
+      // Increment zone scan count if zone provided (if multizone.js loaded)
+      if (customer.zone && typeof incrementZoneScan === 'function') {
+        incrementZoneScan(rid, customer.zone);
+      }
       
       // Update analytics
       analytics.customersThisMonth += 1;
@@ -640,12 +647,13 @@ const DB = {
     }
     
     const queueNumber = `A-${Math.floor(Math.random() * 900) + 100}`;
-    
+
     restaurant.queue.push({
       ...customer,
       queueNumber: queueNumber,
       status: 'waiting',
-      joinedAt: new Date().toISOString()
+      joinedAt: new Date().toISOString(),
+      zone: customer.zone || null  // ← NEW FIELD
     });
     
     restaurant.analytics.customersThisMonth += 1;
