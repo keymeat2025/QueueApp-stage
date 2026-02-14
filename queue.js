@@ -276,37 +276,32 @@ function initWheelPicker() {
 // window.selectGuests is now handled by the wheel picker
 
 // Handle join queue form submission
-
-async function handleJoinQueue(rid, zonesEnabled) {
+async function handleJoinQueue(rid) {
   const name = document.getElementById('customerName').value.trim();
   const phone = document.getElementById('customerPhone').value.trim();
   const guests = window.selectedGuests || 2;
-  
-  // ✅ Get zone selection
-  const zone = zonesEnabled ? (document.getElementById('customerZone') ? document.getElementById('customerZone').value : null) : null;
   
   if (!name || !phone) {
     alert('⚠️ Fill all fields');
     return;
   }
   
-  if (zonesEnabled && !zone) {
-    alert('⚠️ Please select a floor/zone');
-    return;
-  }
-  
   const btn = event.target;
   btn.textContent = 'Joining...';
   btn.disabled = true;
+
+
+  // CAPTURE zone from URL parameter
+  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+  const zone = urlParams.get('zone');
   
   try {
     const result = await FirebaseDB.addToQueue(rid, {
       name: name,
       phone: phone,
       guests: guests,
-      zone: zone  // ← Pass selected zone
+      zone: zone  // ← NEW: Pass zone parameter
     });
-    
     if (result.success) {
       // Update localStorage
       const restaurant = DB.restaurants[rid];
@@ -327,7 +322,6 @@ async function handleJoinQueue(rid, zonesEnabled) {
           name: name,
           phone: phone,
           guests: guests,
-          zone: zone,  // ← NEW
           queueNumber: result.queueNumber,
           status: 'waiting',
           joinedAt: new Date().toISOString()
@@ -341,14 +335,14 @@ async function handleJoinQueue(rid, zonesEnabled) {
       showLoadingSuccess(rid, result.queueNumber, result.customersThisMonth, result.limit);
     } else if (result.error === 'LIMIT_REACHED') {
       showUpgradeModal(rid, result);
-      btn.textContent = 'Add to Queue';
+      btn.textContent = 'Join Queue';
       btn.disabled = false;
     } else {
       throw new Error(result.error);
     }
   } catch (err) {
     alert(`❌ Error: ${err.message}`);
-    btn.textContent = 'Add to Queue';
+    btn.textContent = 'Join Queue';
     btn.disabled = false;
   }
 }
