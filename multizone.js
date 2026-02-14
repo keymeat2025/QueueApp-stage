@@ -130,6 +130,7 @@ function clearZoneFilter() {
 /**
  * Generate Multi-Zone UI HTML for QR Code section
  */
+
 function generateMultiZoneUI(rid, restaurant) {
   const isPremium = isPremiumActive(restaurant);
   const zonesEnabled = isMultiZoneEnabled(restaurant);
@@ -146,7 +147,7 @@ function generateMultiZoneUI(rid, restaurant) {
         </div>
 
         <h4 style="margin:0 0 0.75rem 0;color:#92400e">🏢 Multi-Zone Queue Management</h4>
-        <p style="margin:0 0 1rem 0;font-size:0.875rem;color:#92400e">Manage multiple floors with separate QR codes</p>
+        <p style="margin:0 0 1rem 0;font-size:0.875rem;color:#92400e">Manage multiple floors with separate zone selection</p>
         
         <!-- Blurred Preview -->
         <div style="opacity:0.4;filter:blur(3px);margin-bottom:1rem;pointer-events:none">
@@ -187,7 +188,7 @@ function generateMultiZoneUI(rid, restaurant) {
         </div>
 
         <p style="margin:0 0 1rem 0;font-size:0.875rem;color:#92400e">
-          Create separate QR codes for different floors or zones (Ground Floor, First Floor, Garden, etc.)
+          Create separate zones for different floors (Ground Floor, First Floor, Garden, etc.). Customers select their floor when joining.
         </p>
 
         <button 
@@ -200,86 +201,39 @@ function generateMultiZoneUI(rid, restaurant) {
     `;
   }
   
-  // PREMIUM USER - Zones CONFIGURED and ENABLED
+  // PREMIUM USER - Zones CONFIGURED and ENABLED (SIMPLIFIED VERSION)
   const zones = restaurant.zones.list || [];
-  const currentFilter = getZoneFilter();
-  const currentZone = currentFilter ? zones.find(z => z.id === currentFilter) : null;
   
   return `
-    <!-- MULTI-ZONE MANAGEMENT (PREMIUM - ACTIVE) -->
+    <!-- MULTI-ZONE MANAGEMENT (PREMIUM - ACTIVE - SIMPLIFIED) -->
     <div style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);padding:1.5rem;border-radius:1rem;margin-top:1.5rem;border:3px solid #f59e0b">
       
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem">
         <div>
-          <h4 style="margin:0;color:#92400e">🏢 Multi-Zone Management</h4>
-          <p style="margin:0.25rem 0 0 0;font-size:0.75rem;color:#92400e">✨ Premium Feature Active</p>
+          <h4 style="margin:0 0 0.5rem 0;color:#92400e">🏢 Multi-Zone Active</h4>
+          <p style="margin:0;font-size:0.875rem;color:#92400e">
+            ${zones.length} zones configured • Customers select floor during entry
+          </p>
         </div>
         <button 
           onclick="showZoneConfigModal('${rid}')" 
-          style="background:#f59e0b;color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.875rem"
+          style="background:#f59e0b;color:white;border:none;padding:0.75rem 1.25rem;border-radius:0.75rem;cursor:pointer;font-weight:700"
         >
           ⚙️ Manage Zones
         </button>
       </div>
-
-      <!-- Zone Filter Buttons -->
-      <div style="background:white;padding:1rem;border-radius:0.75rem;margin-bottom:1rem">
-        <p style="margin:0 0 0.75rem 0;font-weight:700;font-size:0.875rem;color:#4b5563">FILTER VIEW:</p>
+      
+      <div style="background:white;padding:1rem;border-radius:0.75rem">
+        <p style="margin:0 0 0.5rem 0;font-weight:700;font-size:0.875rem;color:#4b5563">Active Zones:</p>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
           ${zones.map(zone => `
-            <button 
-              onclick="filterZone('${rid}', '${zone.id}')" 
-              id="zone-btn-${zone.id}"
-              class="zone-filter-btn"
-              style="background:${currentFilter === zone.id ? '#f59e0b' : '#d1d5db'};color:${currentFilter === zone.id ? 'white' : '#1f2937'};border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.75rem;transition:all 0.2s"
-            >
-              ${zone.emoji} ${zone.name} <span style="background:rgba(${currentFilter === zone.id ? '255,255,255' : '0,0,0'},0.2);padding:0.15rem 0.4rem;border-radius:999px;margin-left:0.25rem">${zone.scansToday || 0}</span>
-            </button>
+            <div style="background:#f3f4f6;padding:0.5rem 1rem;border-radius:0.5rem;border:2px solid #e5e7eb">
+              <span style="font-weight:700">${zone.emoji} ${zone.name}</span>
+              <span style="color:#6b7280;font-size:0.875rem;margin-left:0.5rem">• ${zone.scansToday || 0} today</span>
+            </div>
           `).join('')}
-          <button 
-            onclick="filterZone('${rid}', null)" 
-            id="zone-btn-all"
-            class="zone-filter-btn"
-            style="background:${!currentFilter ? '#6b7280' : '#d1d5db'};color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.75rem"
-          >
-            🔄 All
-          </button>
         </div>
       </div>
-
-      <!-- Current Zone QR Display -->
-      ${currentZone ? `
-        <div style="background:white;padding:1.25rem;border-radius:0.75rem;text-align:center">
-          <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:white;display:inline-block;padding:0.5rem 1rem;border-radius:999px;margin-bottom:1rem">
-            <p style="margin:0;font-weight:700;font-size:0.875rem">${currentZone.emoji} ${currentZone.name.toUpperCase()} QR CODE</p>
-          </div>
-          
-          <div style="background:white;padding:1rem;border-radius:1rem;display:inline-block;box-shadow:0 4px 12px rgba(0,0,0,0.1);margin-bottom:1rem">
-            <div id="zone-qr-${currentZone.id}"></div>
-          </div>
-          
-          <p style="margin:0 0 0.5rem 0;font-size:0.875rem;color:#6b7280">Scans today: <strong style="color:#f59e0b">${currentZone.scansToday || 0}</strong></p>
-          <p style="margin:0;font-size:0.75rem;color:#6b7280;font-family:monospace;word-break:break-all">${getZoneQRCode(rid, currentZone.id)}</p>
-          
-          <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
-            <button onclick="downloadZoneQR('${rid}','${currentZone.id}')" style="background:#4b5563;color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.75rem">
-              💾 Download
-            </button>
-            <button onclick="copyZoneQRLink('${rid}','${currentZone.id}')" style="background:#3b82f6;color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.75rem">
-              🔗 Copy Link
-            </button>
-            <button onclick="printZoneQR('${currentZone.id}')" style="background:#22c55e;color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.75rem">
-              🖨️ Print
-            </button>
-          </div>
-        </div>
-      ` : `
-        <div style="background:#dbeafe;padding:1rem;border-radius:0.75rem;text-align:center">
-          <p style="margin:0;font-size:0.875rem;color:#1e40af">
-            👆 Click a zone button above to view that zone's QR code
-          </p>
-        </div>
-      `}
 
     </div>
   `;
@@ -844,7 +798,7 @@ window.getZone = getZone;
 window.isMultiZoneEnabled = isMultiZoneEnabled;
 window.getMaxZonesForPlan = getMaxZonesForPlan;
 window.getUpgradeMessage = getUpgradeMessage;
-window.generateMultiZoneUI = generateMultiZoneUI;
+window.= generateMultiZoneUI;
 window.filterZone = filterZone;
 window.applyZoneFilter = applyZoneFilter;
 window.setZoneFilter = setZoneFilter;
