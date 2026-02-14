@@ -27,7 +27,15 @@ async function showRestaurantAdmin(rid) {
     const restaurant = doc.data();
     DB.restaurants[rid] = restaurant;
     DB.save();
+    // ✅ APPLY ZONE FILTER
+    let queueToDisplay = restaurant.queue;
     
+    // Apply zone filter if active
+    const activeFilter = getZoneFilter ? getZoneFilter() : null;
+    if (activeFilter && typeof applyZoneFilter === 'function') {
+      queueToDisplay = applyZoneFilter(queueToDisplay, activeFilter);
+    }
+
     const waiting = restaurant.queue.filter(q => q.status === 'waiting');
     const allocated = restaurant.queue.filter(q => q.status === 'allocated');
     
@@ -371,25 +379,59 @@ async function showRestaurantAdmin(rid) {
               ` : ''}
             </div>
           ` : ''}
-          
+  
           <div class="grid grid-2 mb">
             <div class="card" style="background:linear-gradient(135deg,#fff7ed 0%,#ffedd5 100%)">
               <div style="font-size:clamp(2rem,6vw,3rem);font-weight:900;color:var(--primary)">${waiting.length}</div>
-              <p style="color:var(--gray-600)">Waiting</p>
+              <p style="color:var(--gray-600)">Waiting${activeFilter ? ' (' + ((restaurant.zones?.list.find(z => z.id === activeFilter) || {}).name || '') + ')' : ''}</p>
             </div>
             <div class="card" style="background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%)">
               <div style="font-size:clamp(2rem,6vw,3rem);font-weight:900;color:var(--success)">${allocated.length}</div>
-              <p style="color:var(--gray-600)">Seated</p>
+              <p style="color:var(--gray-600)">Seated${activeFilter ? ' (' + ((restaurant.zones?.list.find(z => z.id === activeFilter) || {}).name || '') + ')' : ''}</p>
             </div>
           </div>
-          
+
           <div class="card mb">
-            <h2 style="margin-bottom:1rem;font-size:clamp(1.25rem,3vw,2rem)">Waiting Queue</h2>
+            <h2 style="margin-bottom:1rem;font-size:clamp(1.25rem,3vw,2rem)">Waiting Queue${activeFilter ? ` (${(restaurant.zones?.list.find(z => z.id === activeFilter) || {}).name || ''})` : ''}</h2>
+            
+            <!-- ✅ ZONE FILTER BUTTONS (NEW) -->
+            ${isMultiZoneEnabled(restaurant) && restaurant.zones.list.length > 0 ? `
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center;padding:1rem;background:#f9fafb;border-radius:0.75rem">
+                <span style="font-weight:700;font-size:0.875rem;color:#6b7280;margin-right:0.5rem">FILTER:</span>
+                ${restaurant.zones.list.map(zone => `
+                  <button 
+                    onclick="filterZone('${rid}', '${zone.id}')" 
+                    id="queue-zone-btn-${zone.id}"
+                    class="zone-filter-btn"
+                    style="background:${activeFilter === zone.id ? '#f59e0b' : '#e5e7eb'};color:${activeFilter === zone.id ? 'white' : '#1f2937'};border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.875rem;transition:all 0.2s"
+                  >
+                    ${zone.emoji} ${zone.name}
+                  </button>
+                `).join('')}
+                <button 
+                  onclick="filterZone('${rid}', null)" 
+                  id="queue-zone-btn-all"
+                  class="zone-filter-btn"
+                  style="background:${!activeFilter ? '#3b82f6' : '#e5e7eb'};color:${!activeFilter ? 'white' : '#1f2937'};border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.875rem"
+                >
+                  🔄 All
+                </button>
+              </div>
+            ` : ''}
+            
             <div class="space-y">
               ${waiting.length > 0 ? waiting.map(w => `
                 <div class="card flex justify-between items-center flex-wrap gap-1" style="background:var(--gray-50)">
+              
                   <div>
-                    <div style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:700">${w.queueNumber}</div>
+                    <div style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:700">
+                      ${w.queueNumber}
+                      ${w.zone && isMultiZoneEnabled(restaurant) ? `
+                        <span style="background:#f59e0b;color:white;padding:0.25rem 0.5rem;border-radius:0.5rem;font-size:0.75rem;margin-left:0.5rem">
+                          ${(restaurant.zones.list.find(z => z.id === w.zone) || {}).emoji || '📍'} ${(restaurant.zones.list.find(z => z.id === w.zone) || {}).name || w.zone}
+                        </span>
+                      ` : ''}
+                    </div>
                     <p style="color:var(--gray-600);font-size:clamp(.75rem,1.5vw,.875rem)">${w.name} • ${w.phone} • ${w.guests} guests</p>
                   </div>
                   <div class="flex gap-1 items-center flex-wrap">
