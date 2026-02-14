@@ -412,7 +412,25 @@ async function showRestaurantAdmin(rid) {
       </div>
     `);
     
-    setTimeout(() => generateQRCode('daily-qr', rid), 100);
+    setTimeout(() => {
+      generateQRCode('daily-qr', rid);
+      
+      // ✅ Generate zone QR if zone is selected
+      const activeFilter = getZoneFilter ? getZoneFilter() : null;
+      if (activeFilter) {
+        const qrElement = document.getElementById('zone-qr-' + activeFilter);
+        if (qrElement && qrElement.innerHTML === '') {
+          new QRCode(qrElement, {
+            text: getZoneQRCode(rid, activeFilter),
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        }
+      }
+    }, 100);
   });
 }
 
@@ -951,10 +969,14 @@ function showQRPosterModal(rid) {
   `;
   
   document.body.appendChild(modal);
-  
+
   setTimeout(() => {
+    // ✅ Check if zone filter is active
+    const activeFilter = getZoneFilter ? getZoneFilter() : null;
+    const qrURL = activeFilter ? getZoneQRCode(rid, activeFilter) : getTodayQRCode(rid);
+    
     new QRCode(document.getElementById('poster-qr'), {
-      text: getTodayQRCode(rid),
+      text: qrURL,
       width: 200,
       height: 200,
       colorDark: "#000000",
