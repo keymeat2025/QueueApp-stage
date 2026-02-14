@@ -9,6 +9,7 @@
 // ============================================================================
 
 // Show join queue page
+
 async function showJoinQueue(rid) {
   let restaurant = DB.restaurants[rid];
   
@@ -30,12 +31,46 @@ async function showJoinQueue(rid) {
     }
   }
   
+  // ✅ Check if zones are enabled
+  const zonesEnabled = restaurant.zones && restaurant.zones.enabled;
+  const zones = zonesEnabled ? restaurant.zones.list : [];
+  
+  // ✅ Get active zone filter from admin (if any)
+  const activeFilter = getZoneFilter ? getZoneFilter() : null;
+  const preselectedZone = activeFilter || '';
+  
   render(`
     <div style="min-height:100vh;background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);display:flex;align-items:center;justify-content:center;padding:clamp(1rem,3vw,2rem)">
       <div class="card" style="max-width:500px;width:100%">
-        <h2 class="text-center mb">Join Queue</h2>
+        <h2 class="text-center mb" style="display:flex;align-items:center;justify-content:center;gap:0.5rem">
+          <span style="font-size:1.5rem">📱</span> Add Customer
+        </h2>
         <p class="text-center mb" style="color:var(--gray-600)">${restaurant.name}</p>
+        
+        ${preselectedZone ? `
+          <div style="background:#dbeafe;padding:1rem;border-radius:0.75rem;margin-bottom:1rem">
+            <p style="margin:0;font-size:0.875rem;color:#1e40af">
+              ✓ Adding to: <strong>${(zones.find(z => z.id === preselectedZone) || {}).name || 'Selected Zone'}</strong>
+            </p>
+          </div>
+        ` : ''}
+        
         <div class="space-y">
+          
+          ${zonesEnabled ? `
+            <!-- ✅ ZONE SELECTION - TOP POSITION -->
+            <div>
+              <label style="display:block;font-weight:700;margin-bottom:0.5rem;color:#1f2937">Select Floor/Zone:</label>
+              <select id="customerZone" style="width:100%;padding:0.75rem;border:2px solid #e5e7eb;border-radius:0.5rem;font-size:1rem;font-weight:600;color:#1f2937;background:white;cursor:pointer">
+                ${zones.map(zone => `
+                  <option value="${zone.id}" ${zone.id === preselectedZone ? 'selected' : ''}>
+                    ${zone.emoji} ${zone.name}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+          ` : ''}
+          
           <input type="text" id="customerName" placeholder="Your Name">
           <input type="tel" id="customerPhone" placeholder="Mobile" maxlength="10">
           <div>
@@ -53,7 +88,7 @@ async function showJoinQueue(rid) {
               <div class="wheel-selected-value" id="selectedGuestCount">2</div>
             </div>
           </div>
-          <button onclick="handleJoinQueue('${rid}')" class="btn btn-primary w-full">Join Queue</button>
+          <button onclick="handleJoinQueue('${rid}', ${zonesEnabled})" class="btn btn-primary w-full">Add to Queue</button>
         </div>
       </div>
     </div>
