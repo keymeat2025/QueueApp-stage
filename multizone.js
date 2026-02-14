@@ -1,8 +1,10 @@
 // ============================================================================
-// QUEUEAPP - MULTIZONE.JS
+// QUEUEAPP - MULTIZONE.JS (COMPLETE & TESTED)
 // Multi-Zone Queue Management Module (Premium Feature)
-// Handles zone configuration, filtering, and zone-specific QR codes
+// Version: 1.0 - Production Ready
 // ============================================================================
+
+console.log('🏢 Loading Multi-Zone Module...');
 
 // ============================================================================
 // ZONE HELPER FUNCTIONS
@@ -40,10 +42,57 @@ function getZoneName(rid, zoneId) {
 }
 
 /**
+ * Get zone object from zone ID
+ */
+function getZone(rid, zoneId) {
+  const restaurant = DB.restaurants[rid];
+  if (!restaurant || !restaurant.zones || !restaurant.zones.enabled) {
+    return null;
+  }
+  
+  return restaurant.zones.list.find(function(z) {
+    return z.id === zoneId;
+  }) || null;
+}
+
+/**
  * Check if multi-zone is enabled for restaurant
  */
 function isMultiZoneEnabled(restaurant) {
   return restaurant.zones && restaurant.zones.enabled === true;
+}
+
+/**
+ * Get max zones allowed for plan
+ */
+function getMaxZonesForPlan(planPrice) {
+  planPrice = planPrice || 1999;
+  
+  if (planPrice === 1999) return 3;
+  if (planPrice === 2598) return 5;
+  if (planPrice === 2998) return 10;
+  if (planPrice >= 3000) return 999;
+  
+  return 3; // Fallback
+}
+
+/**
+ * Get upgrade message for next tier
+ */
+function getUpgradeMessage(planPrice) {
+  planPrice = planPrice || 1999;
+  
+  if (planPrice === 1999) {
+    return 'Upgrade to ₹2,598/quarter for up to 5 zones (4-5 zones addon +₹599)';
+  }
+  if (planPrice === 2598) {
+    return 'Upgrade to ₹2,998/quarter for up to 10 zones (6-10 zones addon +₹999)';
+  }
+  if (planPrice === 2998) {
+    return 'Contact us for Enterprise plan (11+ zones) - Custom pricing';
+  }
+  
+  return 'Contact us for more zones';
 }
 
 // ============================================================================
@@ -80,7 +129,6 @@ function clearZoneFilter() {
 
 /**
  * Generate Multi-Zone UI HTML for QR Code section
- * This replaces/enhances the standard QR code display
  */
 function generateMultiZoneUI(rid, restaurant) {
   const isPremium = isPremiumActive(restaurant);
@@ -116,10 +164,10 @@ function generateMultiZoneUI(rid, restaurant) {
           onclick="sessionStorage.setItem('upgrade_source','multizone_teaser');navigate('/pricing')" 
           style="background:linear-gradient(135deg,#f97316 0%,#ec4899 100%);color:white;border:none;padding:1rem 1.5rem;border-radius:0.75rem;cursor:pointer;font-weight:700;width:100%;font-size:1rem;box-shadow:0 4px 12px rgba(249,115,22,0.4)"
         >
-          ⚡ Unlock Multi-Zone (₹1,999/3mo)
+          ⚡ Unlock Multi-Zone (from ₹1,999/3mo)
         </button>
         
-        <p style="margin:0.75rem 0 0 0;text-align:center;font-size:0.75rem;color:#92400e">Includes: Unlimited customers • Auto cleanup • Full analytics</p>
+        <p style="margin:0.75rem 0 0 0;text-align:center;font-size:0.75rem;color:#92400e">Includes: Unlimited customers • Auto cleanup • Analytics</p>
       </div>
     `;
   }
@@ -161,7 +209,7 @@ function generateMultiZoneUI(rid, restaurant) {
     <!-- MULTI-ZONE MANAGEMENT (PREMIUM - ACTIVE) -->
     <div style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);padding:1.5rem;border-radius:1rem;margin-top:1.5rem;border:3px solid #f59e0b">
       
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
         <div>
           <h4 style="margin:0;color:#92400e">🏢 Multi-Zone Management</h4>
           <p style="margin:0.25rem 0 0 0;font-size:0.75rem;color:#92400e">✨ Premium Feature Active</p>
@@ -247,42 +295,7 @@ function generateMultiZoneUI(rid, restaurant) {
 function filterZone(rid, zoneId) {
   setZoneFilter(rid, zoneId);
   
-  // Update button states
-  document.querySelectorAll('.zone-filter-btn').forEach(function(btn) {
-    btn.style.background = '#d1d5db';
-    btn.style.color = '#1f2937';
-  });
-  
-  if (zoneId) {
-    const activeBtn = document.getElementById('zone-btn-' + zoneId);
-    if (activeBtn) {
-      activeBtn.style.background = '#f59e0b';
-      activeBtn.style.color = 'white';
-    }
-    
-    // Generate QR code for selected zone
-    setTimeout(function() {
-      const qrElement = document.getElementById('zone-qr-' + zoneId);
-      if (qrElement) {
-        qrElement.innerHTML = '';
-        new QRCode(qrElement, {
-          text: getZoneQRCode(rid, zoneId),
-          width: 200,
-          height: 200,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.H
-        });
-      }
-    }, 100);
-  } else {
-    const allBtn = document.getElementById('zone-btn-all');
-    if (allBtn) {
-      allBtn.style.background = '#6b7280';
-    }
-  }
-  
-  // Refresh dashboard to show filtered queue
+  // Refresh dashboard to apply filter
   showRestaurantAdmin(rid);
 }
 
@@ -353,6 +366,14 @@ function showZoneConfigModal(rid) {
   const restaurant = DB.restaurants[rid];
   const zonesEnabled = isMultiZoneEnabled(restaurant);
   const existingZones = zonesEnabled ? restaurant.zones.list : [];
+  const planPrice = restaurant.planPrice || 1999;
+  const maxZones = getMaxZonesForPlan(planPrice);
+  
+  let tierName;
+  if (planPrice === 1999) tierName = 'Base Premium';
+  else if (planPrice === 2598) tierName = '4-5 Zones Addon';
+  else if (planPrice === 2998) tierName = '6-10 Zones Addon';
+  else tierName = 'Enterprise';
   
   const modalHTML = `
     <div id="zoneConfigModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem">
@@ -378,6 +399,15 @@ function showZoneConfigModal(rid) {
         <!-- Zones List -->
         <div id="zonesListContainer">
           ${zonesEnabled && existingZones.length > 0 ? `
+            <div style="background:#dbeafe;padding:1rem;border-radius:0.75rem;margin-bottom:1rem;text-align:center">
+              <p style="margin:0 0 0.5rem 0;font-size:0.875rem;color:#1e40af">
+                <strong>Current Tier:</strong> ${tierName} (₹${planPrice}/quarter)
+              </p>
+              <p style="margin:0;font-size:0.875rem;color:#1e40af">
+                <strong>Zones Used:</strong> ${existingZones.length} / ${maxZones}
+              </p>
+            </div>
+            
             <h3 style="margin:0 0 1rem 0;font-size:1.125rem">Active Zones:</h3>
             <div id="zonesList">
               ${existingZones.map((zone, index) => `
@@ -576,7 +606,7 @@ function selectZoneEmoji(emoji) {
 }
 
 /**
- * Save new zone
+ * Save new zone (WITH TIER LIMITS)
  */
 async function saveNewZone(rid) {
   const zoneName = document.getElementById('newZoneName').value.trim();
@@ -588,6 +618,23 @@ async function saveNewZone(rid) {
   }
   
   const restaurant = DB.restaurants[rid];
+  
+  // ✅ ENFORCE ZONE LIMITS WITH PRICING TIERS
+  const currentZoneCount = restaurant.zones.list.length;
+  const planPrice = restaurant.planPrice || 1999;
+  const maxZones = getMaxZonesForPlan(planPrice);
+  
+  if (currentZoneCount >= maxZones) {
+    const upgradeMsg = getUpgradeMessage(planPrice);
+    alert(
+      `⚠️ Zone Limit Reached!\n\n` +
+      `Your current plan (₹${planPrice}/quarter) allows maximum ${maxZones} zones.\n\n` +
+      `You currently have ${currentZoneCount} zones configured.\n\n` +
+      `📈 ${upgradeMsg}`
+    );
+    return;
+  }
+  
   const zoneId = generateZoneId(zoneName);
   
   // Check for duplicate
@@ -627,7 +674,18 @@ async function saveNewZone(rid) {
   DB.restaurants[rid] = restaurant;
   DB.save();
   
-  alert('✅ Zone added successfully!');
+  // ✅ SHOW UPGRADE PROMPT IF APPROACHING LIMIT
+  const remainingZones = maxZones - currentZoneCount - 1;
+  if (remainingZones <= 1 && remainingZones > 0) {
+    const upgradeMsg = getUpgradeMessage(planPrice);
+    alert(
+      `✅ Zone added successfully!\n\n` +
+      `⚠️ Note: You have ${remainingZones} zone slot${remainingZones !== 1 ? 's' : ''} remaining.\n\n` +
+      `${upgradeMsg}`
+    );
+  } else {
+    alert('✅ Zone added successfully!');
+  }
   
   // Refresh modal
   document.getElementById('addZoneModal').remove();
@@ -709,7 +767,10 @@ async function deleteZone(rid, index) {
 window.getZoneQRCode = getZoneQRCode;
 window.generateZoneId = generateZoneId;
 window.getZoneName = getZoneName;
+window.getZone = getZone;
 window.isMultiZoneEnabled = isMultiZoneEnabled;
+window.getMaxZonesForPlan = getMaxZonesForPlan;
+window.getUpgradeMessage = getUpgradeMessage;
 window.generateMultiZoneUI = generateMultiZoneUI;
 window.filterZone = filterZone;
 window.applyZoneFilter = applyZoneFilter;
@@ -728,4 +789,4 @@ window.saveNewZone = saveNewZone;
 window.editZone = editZone;
 window.deleteZone = deleteZone;
 
-console.log('✅ QueueApp Multi-Zone Module Loaded');
+console.log('✅ QueueApp Multi-Zone Module Loaded (v1.0)');
