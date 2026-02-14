@@ -319,9 +319,29 @@ function applyZoneFilter(queue, zoneFilter) {
  * Download zone-specific QR code
  */
 function downloadZoneQR(rid, zoneId) {
-  const canvas = document.querySelector('#zone-qr-' + zoneId + ' canvas');
+  const qrContainer = document.getElementById('zone-qr-' + zoneId);
+  const canvas = qrContainer ? qrContainer.querySelector('canvas') : null;
+  
   if (!canvas) {
-    alert('❌ QR code not found');
+    // QR not generated yet, generate it first
+    alert('❌ QR code not ready. Generating now...');
+    
+    if (qrContainer) {
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: getZoneQRCode(rid, zoneId),
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      
+      // Retry download after generation
+      setTimeout(function() {
+        downloadZoneQR(rid, zoneId);
+      }, 500);
+    }
     return;
   }
   
@@ -352,7 +372,60 @@ function copyZoneQRLink(rid, zoneId) {
  * Print zone QR code
  */
 function printZoneQR(zoneId) {
-  window.print();
+  // Create a hidden print container with ONLY the zone QR
+  const canvas = document.querySelector('#zone-qr-' + zoneId + ' canvas');
+  if (!canvas) {
+    alert('❌ QR code not found. Please try again.');
+    return;
+  }
+  
+  // Create printable HTML
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Zone QR Code - Print</title>
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+        }
+        .print-container {
+          text-align: center;
+        }
+        img {
+          max-width: 400px;
+          height: auto;
+        }
+        @media print {
+          body {
+            margin: 0;
+            padding: 0;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="print-container">
+        <img src="${canvas.toDataURL()}" />
+      </div>
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(function() {
+            window.close();
+          }, 100);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 // ============================================================================
