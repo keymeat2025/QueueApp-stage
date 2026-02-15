@@ -1,6 +1,5 @@
-
 // ============================================================================
-// QUEUEAPP - QUEUE.JS
+// QUEUEAPP - QUEUE.JS (WITH ZONE DISPLAY IN SUCCESS MESSAGE)
 // Customer Queue Operations Module
 // ============================================================================
 
@@ -348,7 +347,8 @@ async function handleJoinQueue(rid, zonesEnabled) {
         DB.save();
       }
       
-      showLoadingSuccess(rid, result.queueNumber, result.customersThisMonth, result.limit);
+      // ✅ PASS ZONE TO SUCCESS SCREEN
+      showLoadingSuccess(rid, result.queueNumber, result.customersThisMonth, result.limit, zone, guests);
     } else if (result.error === 'LIMIT_REACHED') {
       showUpgradeModal(rid, result);
       btn.textContent = 'Add to Queue';
@@ -364,20 +364,39 @@ async function handleJoinQueue(rid, zonesEnabled) {
 }
 
 // ============================================================================
-// SUCCESS SCREEN
+// SUCCESS SCREEN (WITH ZONE DISPLAY)
 // ============================================================================
 
-// Show loading success screen with countdown
-function showLoadingSuccess(rid, queueNumber, customersThisMonth, limit) {
+// Show loading success screen with countdown and ZONE INFO
+function showLoadingSuccess(rid, queueNumber, customersThisMonth, limit, zone, guests) {
+  // ✅ GET ZONE INFO
+  const restaurant = DB.restaurants[rid];
+  const zonesEnabled = restaurant.zones && restaurant.zones.enabled;
+  let zoneInfo = '';
+  
+  if (zone && zonesEnabled) {
+    const zoneObj = restaurant.zones.list.find(function(z) { return z.id === zone; });
+    if (zoneObj) {
+      zoneInfo = `
+        <div style="background:#f59e0b;color:white;display:inline-block;padding:0.75rem 1.5rem;border-radius:999px;margin-bottom:1.5rem;font-weight:700;font-size:clamp(0.875rem,2vw,1.125rem);box-shadow:0 4px 12px rgba(245,158,11,0.4);animation:pulse 2s infinite">
+          ${zoneObj.emoji} ${zoneObj.name}
+        </div>
+      `;
+    }
+  }
+  
   render(`
     <div style="min-height:100vh;background:linear-gradient(135deg,var(--success) 0%,#059669 100%);display:flex;align-items:center;justify-content:center;color:white;padding:2rem">
       <div class="text-center" style="max-width:600px;margin:0 auto">
-        <div style="font-size:clamp(5rem,15vw,8rem);margin-bottom:2rem;animation:pulse 1.5s infinite">✅</div>
+        <div style="font-size:clamp(5rem,15vw,8rem);margin-bottom:2rem;animation:bounce 1s">✅</div>
         <h1 style="margin-bottom:2rem;font-size:clamp(2rem,6vw,3rem)">You're In!</h1>
+        
+        ${zoneInfo}
         
         <div class="card" style="background:white;color:var(--gray-900);margin-bottom:2rem">
           <div style="font-size:clamp(4rem,12vw,6rem);font-weight:900;color:var(--success);margin-bottom:1rem">${queueNumber}</div>
           <p style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:600">Your Queue Number</p>
+          <p style="font-size:clamp(1rem,2.5vw,1.25rem);color:var(--gray-600);margin-top:0.75rem">Table for ${guests} guest${guests !== 1 ? 's' : ''}</p>
           ${limit !== 'unlimited' ? `
             <p style="font-size:.875rem;color:var(--gray-600);margin-top:1rem">Usage: ${customersThisMonth}/${limit} this month</p>
           ` : ''}
@@ -389,6 +408,13 @@ function showLoadingSuccess(rid, queueNumber, customersThisMonth, limit) {
         </div>
       </div>
     </div>
+    
+    <style>
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+      }
+    </style>
   `);
   
   let seconds = 3;
@@ -609,4 +635,4 @@ window.showUpgradeModal = showUpgradeModal;
 window.showQueueStatus = showQueueStatus;
 window.initWheelPicker = initWheelPicker;
 
-console.log('✅ QueueApp Queue Module Loaded');
+console.log('✅ QueueApp Queue Module Loaded (with Zone Display)');
