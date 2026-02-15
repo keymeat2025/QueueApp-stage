@@ -36,7 +36,7 @@ async function showJoinQueue(rid) {
   const zones = zonesEnabled ? restaurant.zones.list : [];
   
   // ✅ Get active zone filter from admin (if any)
-  const activeFilter = getZoneFilter ? getZoneFilter() : null;
+  const activeFilter = (typeof getZoneFilter === 'function') ? getZoneFilter() : null;
   const preselectedZone = activeFilter || '';
   
   render(`
@@ -50,7 +50,7 @@ async function showJoinQueue(rid) {
         ${preselectedZone ? `
           <div style="background:#dbeafe;padding:1rem;border-radius:0.75rem;margin-bottom:1rem">
             <p style="margin:0;font-size:0.875rem;color:#1e40af">
-              ✓ Adding to: <strong>${(zones.find(z => z.id === preselectedZone) || {}).name || 'Selected Zone'}</strong>
+              ✓ Adding to: <strong>${(zones.find(function(z) { return z.id === preselectedZone; }) || {}).name || 'Selected Zone'}</strong>
             </p>
           </div>
         ` : ''}
@@ -62,11 +62,11 @@ async function showJoinQueue(rid) {
             <div>
               <label style="display:block;font-weight:700;margin-bottom:0.5rem;color:#1f2937">Select Floor/Zone:</label>
               <select id="customerZone" style="width:100%;padding:0.75rem;border:2px solid #e5e7eb;border-radius:0.5rem;font-size:1rem;font-weight:600;color:#1f2937;background:white;cursor:pointer">
-                ${zones.map(zone => `
+                ${zones.map(function(zone) { return `
                   <option value="${zone.id}" ${zone.id === preselectedZone ? 'selected' : ''}>
                     ${zone.emoji} ${zone.name}
                   </option>
-                `).join('')}
+                `; }).join('')}
               </select>
             </div>
           ` : ''}
@@ -81,9 +81,9 @@ async function showJoinQueue(rid) {
               <div class="wheel-picker-overlay"></div>
               <div class="wheel-picker-highlight"></div>
               <div class="wheel-picker" id="guestPicker">
-                ${Array.from({length: 30}, (_, i) => i + 1).map(n => `
+                ${Array.from({length: 30}, function(_, i) { return i + 1; }).map(function(n) { return `
                   <div class="wheel-item" data-value="${n}">${n}</div>
-                `).join('')}
+                `; }).join('')}
               </div>
               <div class="wheel-selected-value" id="selectedGuestCount">2</div>
             </div>
@@ -204,7 +204,7 @@ async function showJoinQueue(rid) {
   `);
   
   // Initialize wheel picker
-  setTimeout(() => {
+  setTimeout(function() {
     initWheelPicker();
   }, 100);
 }
@@ -276,32 +276,47 @@ function initWheelPicker() {
 // window.selectGuests is now handled by the wheel picker
 
 // Handle join queue form submission
-async function handleJoinQueue(rid) {
+
+async function handleJoinQueue(rid, zonesEnabled) {
   const name = document.getElementById('customerName').value.trim();
   const phone = document.getElementById('customerPhone').value.trim();
   const guests = window.selectedGuests || 2;
+  
+  // ✅ Get zone from dropdown (if zones enabled) OR from URL parameter (for QR scans)
+  let zone = null;
+  
+  if (zonesEnabled) {
+    // Admin customer entry - get from dropdown
+    const zoneSelect = document.getElementById('customerZone');
+    zone = zoneSelect ? zoneSelect.value : null;
+  } else {
+    // QR scan entry - get from URL parameter
+    const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    zone = urlParams.get('zone');
+  }
   
   if (!name || !phone) {
     alert('⚠️ Fill all fields');
     return;
   }
   
+  if (zonesEnabled && !zone) {
+    alert('⚠️ Please select a floor/zone');
+    return;
+  }
+  
   const btn = event.target;
   btn.textContent = 'Joining...';
   btn.disabled = true;
-
-
-  // CAPTURE zone from URL parameter
-  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-  const zone = urlParams.get('zone');
   
   try {
     const result = await FirebaseDB.addToQueue(rid, {
       name: name,
       phone: phone,
       guests: guests,
-      zone: zone  // ← NEW: Pass zone parameter
+      zone: zone  // ← Pass zone (from dropdown or URL)
     });
+    
     if (result.success) {
       // Update localStorage
       const restaurant = DB.restaurants[rid];
@@ -322,6 +337,7 @@ async function handleJoinQueue(rid) {
           name: name,
           phone: phone,
           guests: guests,
+          zone: zone,  // ← NEW: Include zone
           queueNumber: result.queueNumber,
           status: 'waiting',
           joinedAt: new Date().toISOString()
@@ -335,14 +351,14 @@ async function handleJoinQueue(rid) {
       showLoadingSuccess(rid, result.queueNumber, result.customersThisMonth, result.limit);
     } else if (result.error === 'LIMIT_REACHED') {
       showUpgradeModal(rid, result);
-      btn.textContent = 'Join Queue';
+      btn.textContent = 'Add to Queue';
       btn.disabled = false;
     } else {
       throw new Error(result.error);
     }
   } catch (err) {
     alert(`❌ Error: ${err.message}`);
-    btn.textContent = 'Join Queue';
+    btn.textContent = 'Add to Queue';
     btn.disabled = false;
   }
 }
