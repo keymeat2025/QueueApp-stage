@@ -27,18 +27,18 @@ async function showRestaurantAdmin(rid) {
     const restaurant = doc.data();
     DB.restaurants[rid] = restaurant;
     DB.save();
+
     // ✅ APPLY ZONE FILTER
     let queueToDisplay = restaurant.queue;
     
-    // Apply zone filter if active
-    const activeFilter = getZoneFilter ? getZoneFilter() : null;
+    // Apply zone filter if active (check if function exists first)
+    const activeFilter = (typeof getZoneFilter === 'function') ? getZoneFilter() : null;
     if (activeFilter && typeof applyZoneFilter === 'function') {
       queueToDisplay = applyZoneFilter(queueToDisplay, activeFilter);
     }
-
-    const waiting = restaurant.queue.filter(q => q.status === 'waiting');
-    const allocated = restaurant.queue.filter(q => q.status === 'allocated');
     
+    const waiting = queueToDisplay.filter(function(q) { return q.status === 'waiting'; });
+    const allocated = queueToDisplay.filter(function(q) { return q.status === 'allocated'; });
     // Get analytics
     const analyticsResult = await FirebaseDB.getAnalytics(rid);
     const analytics = analyticsResult.success ? analyticsResult.analytics : {};
@@ -347,10 +347,9 @@ async function showRestaurantAdmin(rid) {
               </ol>
             </div>
           </div>
-          
+
           <!-- MULTI-ZONE SECTION (INJECTED BY multizone.js) -->
-          ${generateMultiZoneUI(rid, restaurant)}  
-          
+          ${typeof generateMultiZoneUI === 'function' ? generateMultiZoneUI(rid, restaurant) : ''}
           ${restaurant.plan === 'free' ? `
             <div class="card mb" style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%)">
               <h2 style="margin-bottom:1rem;font-size:clamp(1.25rem,3vw,2rem)">📊 Monthly Usage</h2>
@@ -383,22 +382,21 @@ async function showRestaurantAdmin(rid) {
           <div class="grid grid-2 mb">
             <div class="card" style="background:linear-gradient(135deg,#fff7ed 0%,#ffedd5 100%)">
               <div style="font-size:clamp(2rem,6vw,3rem);font-weight:900;color:var(--primary)">${waiting.length}</div>
-              <p style="color:var(--gray-600)">Waiting${activeFilter ? ' (' + ((restaurant.zones?.list.find(z => z.id === activeFilter) || {}).name || '') + ')' : ''}</p>
+              <p style="color:var(--gray-600)">Waiting${activeFilter ? ' (' + ((restaurant.zones?.list.find(function(z) { return z.id === activeFilter; }) || {}).name || '') + ')' : ''}</p>
             </div>
             <div class="card" style="background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%)">
               <div style="font-size:clamp(2rem,6vw,3rem);font-weight:900;color:var(--success)">${allocated.length}</div>
-              <p style="color:var(--gray-600)">Seated${activeFilter ? ' (' + ((restaurant.zones?.list.find(z => z.id === activeFilter) || {}).name || '') + ')' : ''}</p>
+              <p style="color:var(--gray-600)">Seated${activeFilter ? ' (' + ((restaurant.zones?.list.find(function(z) { return z.id === activeFilter; }) || {}).name || '') + ')' : ''}</p>
             </div>
           </div>
 
           <div class="card mb">
-            <h2 style="margin-bottom:1rem;font-size:clamp(1.25rem,3vw,2rem)">Waiting Queue${activeFilter ? ` (${(restaurant.zones?.list.find(z => z.id === activeFilter) || {}).name || ''})` : ''}</h2>
-            
-            <!-- ✅ ZONE FILTER BUTTONS (NEW) -->
-            ${isMultiZoneEnabled(restaurant) && restaurant.zones.list.length > 0 ? `
+            <h2 style="margin-bottom:1rem;font-size:clamp(1.25rem,3vw,2rem)">Waiting Queue${activeFilter ? ` (${(restaurant.zones?.list.find(function(z) { return z.id === activeFilter; }) || {}).name || ''})` : ''}</h2>
+                <!-- ✅ ZONE FILTER BUTTONS (NEW) -->
+            ${(typeof isMultiZoneEnabled === 'function' && isMultiZoneEnabled(restaurant) && restaurant.zones.list.length > 0) ? `
               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center;padding:1rem;background:#f9fafb;border-radius:0.75rem">
                 <span style="font-weight:700;font-size:0.875rem;color:#6b7280;margin-right:0.5rem">FILTER:</span>
-                ${restaurant.zones.list.map(zone => `
+                ${restaurant.zones.list.map(function(zone) { return `
                   <button 
                     onclick="filterZone('${rid}', '${zone.id}')" 
                     id="queue-zone-btn-${zone.id}"
@@ -407,7 +405,7 @@ async function showRestaurantAdmin(rid) {
                   >
                     ${zone.emoji} ${zone.name}
                   </button>
-                `).join('')}
+                `; }).join('')}
                 <button 
                   onclick="filterZone('${rid}', null)" 
                   id="queue-zone-btn-all"
@@ -423,12 +421,12 @@ async function showRestaurantAdmin(rid) {
               ${waiting.length > 0 ? waiting.map(w => `
                 <div class="card flex justify-between items-center flex-wrap gap-1" style="background:var(--gray-50)">
               
-                  <div>
+                
                     <div style="font-size:clamp(1.25rem,3vw,1.5rem);font-weight:700">
                       ${w.queueNumber}
-                      ${w.zone && isMultiZoneEnabled(restaurant) ? `
+                      ${w.zone && (typeof isMultiZoneEnabled === 'function' && isMultiZoneEnabled(restaurant)) ? `
                         <span style="background:#f59e0b;color:white;padding:0.25rem 0.5rem;border-radius:0.5rem;font-size:0.75rem;margin-left:0.5rem">
-                          ${(restaurant.zones.list.find(z => z.id === w.zone) || {}).emoji || '📍'} ${(restaurant.zones.list.find(z => z.id === w.zone) || {}).name || w.zone}
+                          ${(restaurant.zones.list.find(function(z) { return z.id === w.zone; }) || {}).emoji || '📍'} ${(restaurant.zones.list.find(function(z) { return z.id === w.zone; }) || {}).name || w.zone}
                         </span>
                       ` : ''}
                     </div>
@@ -453,28 +451,10 @@ async function showRestaurantAdmin(rid) {
         </div>
       </div>
     `);
-    
-    setTimeout(() => {
+
+    setTimeout(function() {
       generateQRCode('daily-qr', rid);
-      
-      // ✅ Generate zone QR if zone is selected
-      const activeFilter = getZoneFilter ? getZoneFilter() : null;
-      if (activeFilter) {
-        const qrElement = document.getElementById('zone-qr-' + activeFilter);
-        if (qrElement && qrElement.innerHTML === '') {
-          new QRCode(qrElement, {
-            text: getZoneQRCode(rid, activeFilter),
-            width: 200,
-            height: 200,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-          });
-        }
-      }
     }, 100);
-  });
-}
 
 // Allocate table to customer
 async function allocateTable(rid, queueNumber) {
