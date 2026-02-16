@@ -67,6 +67,9 @@ async function showDisplay(rid, customerQueueNumber) {
   // Get current display settings
   const settings = getDisplaySettings(rid);
   
+  // Track previous allocation status for customer-specific view
+  let wasAllocated = false;
+  
   // Set up real-time listener
   window.displayUnsubscribe = db.collection('restaurants').doc(rid).onSnapshot(doc => {
     if (!doc.exists) {
@@ -97,6 +100,14 @@ async function showDisplay(rid, customerQueueNumber) {
     const displayAllocatedQueue = customerQueueNumber
       ? justCalled.filter(q => q.queueNumber === customerQueueNumber)
       : justCalled;
+    
+    // NOTIFICATION SYSTEM: Trigger when customer gets table allocated
+    if (customerQueueNumber && displayAllocatedQueue.length > 0 && !wasAllocated) {
+      wasAllocated = true;
+      triggerTableAllocatedNotification();
+    } else if (customerQueueNumber && displayAllocatedQueue.length === 0) {
+      wasAllocated = false;
+    }
     
     // Responsive card sizing
     const cardSize = displayAllocatedQueue.length <= 3 ? 'min(400px,100%)' : displayAllocatedQueue.length <= 6 ? 'min(320px,100%)' : 'min(250px,100%)';
@@ -621,6 +632,177 @@ const stopDragQR = (e) => {
   document.removeEventListener('mouseup', stopDragQR);
   document.removeEventListener('touchmove', dragQR);
   document.removeEventListener('touchend', stopDragQR);
+};
+
+// ============================================================================
+// NOTIFICATION SYSTEM (SOUND, VIBRATION, VISUAL BLAST)
+// ============================================================================
+
+const triggerTableAllocatedNotification = () => {
+  console.log('🎉 TABLE ALLOCATED! Triggering notifications...');
+  
+  // 1. PLAY BELL SOUND
+  playNotificationSound();
+  
+  // 2. TRIGGER VIBRATION (mobile devices)
+  triggerVibration();
+  
+  // 3. VISUAL BLAST EFFECT
+  triggerVisualBlast();
+  
+  // 4. SHOW CONFETTI (optional)
+  triggerConfetti();
+};
+
+// Play notification bell sound
+const playNotificationSound = () => {
+  try {
+    // Create bell sound using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Bell sound with multiple frequencies
+    const playBellTone = (frequency, duration, startTime) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + duration);
+      
+      oscillator.start(audioContext.currentTime + startTime);
+      oscillator.stop(audioContext.currentTime + startTime + duration);
+    };
+    
+    // Play bell sequence (ding-ding-ding)
+    playBellTone(800, 0.2, 0);
+    playBellTone(1000, 0.2, 0.25);
+    playBellTone(1200, 0.3, 0.5);
+    
+    console.log('✅ Bell sound played');
+  } catch (e) {
+    console.error('Failed to play sound:', e);
+  }
+};
+
+// Trigger device vibration
+const triggerVibration = () => {
+  try {
+    if ('vibrate' in navigator) {
+      // Vibration pattern: [vibrate, pause, vibrate, pause, vibrate]
+      navigator.vibrate([200, 100, 200, 100, 400]);
+      console.log('✅ Vibration triggered');
+    } else {
+      console.log('⚠️ Vibration not supported on this device');
+    }
+  } catch (e) {
+    console.error('Failed to trigger vibration:', e);
+  }
+};
+
+// Visual blast effect (screen flash + animation)
+const triggerVisualBlast = () => {
+  try {
+    // Create full-screen blast overlay
+    const blast = document.createElement('div');
+    blast.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(251,191,36,0.9) 0%, rgba(249,115,22,0.7) 50%, transparent 100%);
+      z-index: 9999;
+      pointer-events: none;
+      animation: blastEffect 1s ease-out;
+    `;
+    
+    // Add blast animation keyframes
+    if (!document.getElementById('blast-animation-style')) {
+      const style = document.createElement('style');
+      style.id = 'blast-animation-style';
+      style.textContent = `
+        @keyframes blastEffect {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+          }
+          30% {
+            opacity: 1;
+            transform: scale(1.2);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(2);
+          }
+        }
+        
+        @keyframes confettiPop {
+          0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(blast);
+    
+    // Remove blast after animation
+    setTimeout(() => {
+      blast.remove();
+    }, 1000);
+    
+    console.log('✅ Visual blast triggered');
+  } catch (e) {
+    console.error('Failed to trigger visual blast:', e);
+  }
+};
+
+// Confetti explosion effect
+const triggerConfetti = () => {
+  try {
+    const colors = ['#fbbf24', '#f59e0b', '#ea580c', '#10b981', '#3b82f6', '#8b5cf6'];
+    const confettiCount = 50;
+    
+    for (let i = 0; i < confettiCount; i++) {
+      setTimeout(() => {
+        const confetti = document.createElement('div');
+        confetti.style.cssText = `
+          position: fixed;
+          width: ${Math.random() * 10 + 5}px;
+          height: ${Math.random() * 10 + 5}px;
+          background: ${colors[Math.floor(Math.random() * colors.length)]};
+          top: 50%;
+          left: ${Math.random() * 100}%;
+          z-index: 9998;
+          border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+          pointer-events: none;
+          animation: confettiPop ${Math.random() * 2 + 2}s ease-out forwards;
+        `;
+        
+        document.body.appendChild(confetti);
+        
+        // Remove confetti after animation
+        setTimeout(() => {
+          confetti.remove();
+        }, 4000);
+      }, i * 20);
+    }
+    
+    console.log('✅ Confetti triggered');
+  } catch (e) {
+    console.error('Failed to trigger confetti:', e);
+  }
 };
 
 // ============================================================================
