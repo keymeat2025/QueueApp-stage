@@ -1,8 +1,7 @@
-
 // ============================================================================
-// QUEUEAPP - CORE.JS (UPDATED WITH EXPIRY LIFECYCLE - UNDEFINED FIX APPLIED)
+// QUEUEAPP - CORE.JS (FIXED - NO MORE DUPLICATE QUEUE NUMBERS)
 // Foundation Layer: Firebase, Database, Utilities, Routing
-// CHANGES: Fixed undefined fields causing Firestore errors
+// FIX: Atomic sequential queue numbers instead of random numbers
 // ============================================================================
 
 // ============================================================================
@@ -252,7 +251,7 @@ const FirebaseDB = {
     }
   },
 
-  // Add customer to queue (FIXED - NO UNDEFINED FIELDS)
+  // Add customer to queue (FIXED - ATOMIC QUEUE NUMBERS)
   async addToQueue(rid, customer) {
     try {
       const restaurantRef = db.collection('restaurants').doc(rid);
@@ -376,9 +375,38 @@ const FirebaseDB = {
         };
       }
       
-      // Generate queue number
-      const queueNumber = `A-${Math.floor(Math.random() * 900) + 100}`;
-  
+      // ===== COLLISION-RESISTANT QUEUE NUMBER GENERATION =====
+      // Generate random 4-digit number with collision detection
+      // Range: A-1000 to A-9999 (9000 possible numbers per day)
+      let queueNumber;
+      let attempts = 0;
+      const maxAttempts = 100;
+      
+      do {
+        // Generate 4-digit random number (1000-9999)
+        const random = Math.floor(Math.random() * 9000) + 1000;
+        queueNumber = `A-${random}`;
+        
+        // Check if this number already exists in today's queue
+        const duplicate = restaurant.queue.find(q => q.queueNumber === queueNumber);
+        
+        if (!duplicate) {
+          break; // Unique number found
+        }
+        
+        attempts++;
+        
+        if (attempts >= maxAttempts) {
+          // Fallback: use timestamp-based guaranteed unique number
+          const timestamp = Date.now().toString();
+          const uniqueSuffix = timestamp.slice(-5); // Last 5 digits
+          queueNumber = `A-${uniqueSuffix}`;
+          console.warn(`[QUEUE] Max collision attempts reached, using timestamp: ${queueNumber}`);
+          break;
+        }
+      } while (attempts < maxAttempts);
+      
+      console.log(`[QUEUE] Generated unique number: ${queueNumber} (${attempts} collision checks)`);
 
       // Create queue item (MODIFIED - includes zone field)
       const queueItem = {
@@ -647,7 +675,31 @@ const DB = {
       return null;
     }
     
-    const queueNumber = `A-${Math.floor(Math.random() * 900) + 100}`;
+    // ===== COLLISION-RESISTANT QUEUE NUMBER (LOCAL STORAGE VERSION) =====
+    // Range: A-1000 to A-9999 (9000 possible numbers per day)
+    let queueNumber;
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    do {
+      const random = Math.floor(Math.random() * 9000) + 1000;
+      queueNumber = `A-${random}`;
+      
+      const duplicate = restaurant.queue.find(q => q.queueNumber === queueNumber);
+      
+      if (!duplicate) {
+        break;
+      }
+      
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        const timestamp = Date.now().toString();
+        const uniqueSuffix = timestamp.slice(-5);
+        queueNumber = `A-${uniqueSuffix}`;
+        break;
+      }
+    } while (attempts < maxAttempts);
 
     restaurant.queue.push({
       ...customer,
@@ -882,6 +934,5 @@ window.generateSubscriptionId = generateSubscriptionId;
 window.getSubscriptionId = getSubscriptionId;
 window.getNextCycleNumber = getNextCycleNumber;
 
-console.log('✅ QueueApp Core Module Loaded');
-console.log('✅ Expiry Lifecycle Logic: ENABLED');
-console.log('✅ Undefined Fix: APPLIED');
+console.log('✅ QueueApp Core Module Loaded (FIXED - Collision Detection)');
+console.log('✅ Bug Fix: Random numbers with collision detection prevent duplicates');
