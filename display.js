@@ -1,5 +1,5 @@
 // ============================================================================
-// QUEUEAPP - DISPLAY.JS (ENHANCED WITH UI TOGGLES + ZONE BADGES)
+// QUEUEAPP - DISPLAY.JS (ENHANCED WITH BETTER ZONE VISIBILITY)
 // Live Display Screen & QR Controls Module with Customizable UI Options
 // ============================================================================
 
@@ -100,76 +100,62 @@ async function showDisplay(rid, customerQueueNumber) {
     
     // Responsive card sizing
     const cardSize = displayAllocatedQueue.length <= 3 ? 'min(400px,100%)' : displayAllocatedQueue.length <= 6 ? 'min(320px,100%)' : 'min(250px,100%)';
-    const cardPadding = displayAllocatedQueue.length <= 3 ? 'clamp(2rem,4vw,4rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(1.5rem,3vw,3rem)' : 'clamp(1rem,2vw,2rem)';
-    const queueFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(6rem,15vw,12rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(5rem,12vw,10rem)' : 'clamp(4rem,10vw,8rem)';
-    const nameFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(2rem,6vw,4rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(1.75rem,5vw,3.5rem)' : 'clamp(1.5rem,4vw,3rem)';
-    const tableFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(3rem,8vw,6rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(2.5rem,7vw,5rem)' : 'clamp(2rem,6vw,4rem)';
-    const guestFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(1.5rem,4vw,3rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(1.25rem,3.5vw,2.5rem)' : 'clamp(1rem,3vw,2rem)';
+    const cardPadding = displayAllocatedQueue.length <= 3 ? 'clamp(1.5rem,3vw,3rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(1.25rem,2.5vw,2.5rem)' : 'clamp(1rem,2vw,2rem)';
+    const queueFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(5rem,12vw,10rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(4rem,10vw,8rem)' : 'clamp(3.5rem,8vw,7rem)';
+    const nameFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(1.75rem,4.5vw,3rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(1.5rem,4vw,2.5rem)' : 'clamp(1.25rem,3.5vw,2rem)';
+    const tableFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(2.5rem,6vw,4.5rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(2rem,5vw,3.5rem)' : 'clamp(1.75rem,4.5vw,3rem)';
+    const guestFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(1.25rem,3vw,2rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(1.1rem,2.5vw,1.75rem)' : 'clamp(1rem,2.25vw,1.5rem)';
+    const zoneFontSize = displayAllocatedQueue.length <= 3 ? 'clamp(1.25rem,3vw,2rem)' : displayAllocatedQueue.length <= 6 ? 'clamp(1.1rem,2.5vw,1.75rem)' : 'clamp(1rem,2.25vw,1.5rem)';
     
-    // Generate NOW SERVING cards based on card style setting
+    // Generate NOW SERVING cards with improved zone visibility
     const generateNowServingCard = (allocated, isMyTurn) => {
-
-            
-            <div style="margin-top:${allocated.zone ? 'clamp(2.5rem,5vw,3.5rem)' : '0'}">
-              <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};line-height:1;margin-bottom:clamp(0.75rem,2vw,1.25rem)">${allocated.queueNumber}</div>
-              
-              <div style="background:${isMyTurn ? 'rgba(255,255,255,0.2)' : 'var(--gray-50)'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(0.75rem,1.5vw,1rem);margin:0 auto;max-width:90%">
-                <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-bottom:clamp(0.5rem,1vw,0.75rem)">${allocated.name}</div>
-                <div style="font-size:${guestFontSize};color:${isMyTurn ? 'rgba(255,255,255,0.9)' : 'var(--gray-600)'};font-weight:600">
-                  👥 ${allocated.guests} Guest${allocated.guests === 1 ? '' : 's'}
-                </div>
-              </div>
-              
-              ${currentSettings.ui.tableStyle === 'simple' 
-                ? `<div style="font-size:${tableFontSize};font-weight:800;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-top:clamp(1rem,2vw,1.5rem)">Table ${allocated.tableNo}</div>`
-                : `<div style="background:${isMyTurn ? 'white' : 'linear-gradient(135deg,var(--success) 0%,#059669 100%)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);box-shadow:0 4px 12px rgba(0,0,0,.2);margin-top:clamp(1rem,2vw,1.5rem);max-width:90%;margin-left:auto;margin-right:auto">
-                    <div style="font-size:clamp(.875rem,2vw,1.25rem);font-weight:700;margin-bottom:.25rem">TABLE</div>
-                    <div style="font-size:${tableFontSize};font-weight:900">${allocated.tableNo}</div>
-                  </div>`
-              }
-              
-              ${isMyTurn ? `
-                <div style="margin-top:clamp(1rem,2vw,1.5rem);background:white;color:var(--primary);padding:clamp(.75rem,1.5vw,1rem);border-radius:clamp(.5rem,1vw,.75rem);font-weight:900;font-size:clamp(1.25rem,3vw,2rem);animation:pulse 2s infinite;max-width:90%;margin-left:auto;margin-right:auto">
-                  🎉 YOUR TURN! 🎉
-                </div>
-              ` : ''}
-            </div>
+      const zoneHTML = allocated.zone ? `
+        <div style="background:${isMyTurn ? 'rgba(0,0,0,0.2)' : 'linear-gradient(135deg,#ea580c 0%,#c2410c 100%)'};color:white;padding:clamp(0.5rem,1.2vw,1rem) clamp(1rem,2.2vw,1.75rem);border-radius:clamp(0.5rem,1.2vw,1rem);font-size:${zoneFontSize};font-weight:700;letter-spacing:0.05em;text-transform:uppercase;box-shadow:0 3px 12px rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.25);margin-bottom:clamp(0.75rem,1.5vw,1.5rem)">
+          🏢 ${allocated.zone}
+        </div>
+      ` : '';
+      
+      if (currentSettings.ui.cardStyle === 'simple') {
+        return `
+          <div class="card text-center" style="background:${isMyTurn ? 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%)' : 'white'};padding:${cardPadding};border:4px solid ${isMyTurn ? '#f59e0b' : 'white'};${isMyTurn ? 'animation:pulse-badge 1s infinite;box-shadow:0 0 30px rgba(251,191,36,0.8)' : ''};min-height:280px;display:flex;flex-direction:column;justify-content:center;gap:clamp(0.5rem,1vw,1rem)">
+            ${zoneHTML}
+            <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};line-height:1;text-shadow:${isMyTurn ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'}">${allocated.queueNumber}</div>
+            <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};text-shadow:${isMyTurn ? '0 2px 6px rgba(0,0,0,0.15)' : 'none'}">${allocated.name}</div>
+            <div style="font-size:${guestFontSize};color:${isMyTurn ? 'rgba(255,255,255,0.9)' : 'var(--gray-600)'};font-weight:600">👥 ${allocated.guests} Guest${allocated.guests !== 1 ? 's' : ''}</div>
+            ${currentSettings.ui.tableStyle === 'simple' 
+              ? `<div style="font-size:${tableFontSize};font-weight:800;color:${isMyTurn ? 'rgba(255,255,255,0.95)' : 'var(--gray-900)'};margin-top:clamp(0.5rem,1vw,1rem)">Table ${allocated.tableNo}</div>`
+              : `<div style="background:${isMyTurn ? 'white' : 'linear-gradient(135deg,var(--success) 0%,#059669 100%)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(0.75rem,1.5vw,1.25rem);border-radius:clamp(.6rem,1.2vw,.9rem);box-shadow:0 4px 12px rgba(0,0,0,.2);margin-top:clamp(0.5rem,1vw,1rem)">
+                  <div style="font-size:clamp(.75rem,1.75vw,1.1rem);font-weight:700;margin-bottom:.25rem;opacity:0.9">TABLE</div>
+                  <div style="font-size:${tableFontSize};font-weight:900">${allocated.tableNo}</div>
+                </div>`
+            }
+            ${isMyTurn ? `<div style="margin-top:clamp(0.5rem,1vw,1rem);background:white;color:var(--primary);padding:clamp(.6rem,1.2vw,.9rem);border-radius:clamp(.4rem,.8vw,.6rem);font-weight:900;font-size:clamp(1.1rem,2.5vw,1.75rem);animation:pulse 2s infinite;box-shadow:0 4px 12px rgba(0,0,0,0.15)">🎉 YOUR TURN! 🎉</div>` : ''}
           </div>
         `;
       } else {
-        // ENHANCED STYLE WITH PROMINENT ZONE BADGE AT TOP
         return `
-          <div class="card text-center" style="background:${isMyTurn ? 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%)' : 'white'};padding:${cardPadding};border:4px solid ${isMyTurn ? '#f59e0b' : 'var(--success)'}${isMyTurn ? ';animation:pulse 2s infinite;box-shadow:0 0 40px rgba(251,191,36,.8)' : ''};position:relative">
-            
-            ${allocated.zone ? `
-              <div style="background:${isMyTurn ? 'rgba(255,255,255,0.95)' : 'var(--primary)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(0.5rem,1vw,0.75rem) clamp(0.75rem,1.5vw,1rem);border-radius:clamp(0.5rem,1vw,0.75rem);font-size:clamp(0.875rem,1.8vw,1.125rem);font-weight:800;margin-bottom:clamp(0.75rem,1.5vw,1rem);box-shadow:0 2px 8px rgba(0,0,0,0.15);display:inline-block;max-width:90%">
-                🏢 ${allocated.zone.toUpperCase()}
-              </div>
-            ` : ''}
-            
-            <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};margin-bottom:clamp(.75rem,1.5vw,1rem);text-shadow:${isMyTurn ? '0 4px 8px rgba(0,0,0,.3)' : 'none'};line-height:1">
+          <div class="card text-center" style="background:${isMyTurn ? 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%)' : 'white'};padding:${cardPadding};border:4px solid ${isMyTurn ? '#f59e0b' : 'var(--success)'}${isMyTurn ? ';animation:pulse 2s infinite;box-shadow:0 0 40px rgba(251,191,36,.8)' : ''};display:flex;flex-direction:column;gap:clamp(0.5rem,1vw,1rem)">
+            ${zoneHTML}
+            <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};text-shadow:${isMyTurn ? '0 4px 8px rgba(0,0,0,.3)' : 'none'};line-height:1">
               ${allocated.queueNumber}
             </div>
-            
-            <div style="background:${isMyTurn ? 'rgba(255,255,255,.25)' : 'var(--gray-50)'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);margin-bottom:clamp(.75rem,1.5vw,1rem)">
-              <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-bottom:clamp(.5rem,1vw,0.75rem);text-shadow:${isMyTurn ? '0 2px 4px rgba(0,0,0,.2)' : 'none'}">
+            <div style="background:${isMyTurn ? 'rgba(255,255,255,.25)' : 'var(--gray-50)'};padding:clamp(0.75rem,1.5vw,1.25rem);border-radius:clamp(.6rem,1.2vw,.9rem);border:2px solid ${isMyTurn ? 'rgba(255,255,255,0.3)' : 'transparent'}">
+              <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-bottom:clamp(.4rem,.8vw,.75rem);text-shadow:${isMyTurn ? '0 2px 4px rgba(0,0,0,.2)' : 'none'}">
                 ${allocated.name}
               </div>
               <div style="font-size:${guestFontSize};color:${isMyTurn ? 'rgba(255,255,255,.95)' : 'var(--gray-600)'};font-weight:600">
                 👥 ${allocated.guests} Guest${allocated.guests !== 1 ? 's' : ''}
               </div>
             </div>
-            
             ${currentSettings.ui.tableStyle === 'gradient' 
-              ? `<div style="background:${isMyTurn ? 'white' : 'linear-gradient(135deg,var(--success) 0%,#059669 100%)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);box-shadow:0 4px 12px rgba(0,0,0,.2)">
-                  <div style="font-size:clamp(.875rem,2vw,1.25rem);font-weight:700;margin-bottom:.25rem">TABLE</div>
+              ? `<div style="background:${isMyTurn ? 'white' : 'linear-gradient(135deg,var(--success) 0%,#059669 100%)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(0.75rem,1.5vw,1.25rem);border-radius:clamp(.6rem,1.2vw,.9rem);box-shadow:0 4px 12px rgba(0,0,0,.2)">
+                  <div style="font-size:clamp(.75rem,1.75vw,1.1rem);font-weight:700;margin-bottom:.25rem;opacity:0.9">TABLE</div>
                   <div style="font-size:${tableFontSize};font-weight:900">${allocated.tableNo}</div>
                 </div>`
               : `<div style="font-size:${tableFontSize};font-weight:800;color:${isMyTurn ? 'white' : 'var(--gray-900)'}">Table ${allocated.tableNo}</div>`
             }
-            
             ${isMyTurn ? `
-              <div style="margin-top:clamp(1rem,2vw,1.5rem);background:white;color:var(--primary);padding:clamp(.75rem,1.5vw,1rem);border-radius:clamp(.5rem,1vw,.75rem);font-weight:900;font-size:clamp(1.25rem,3vw,2rem);animation:pulse 2s infinite">
+              <div style="background:white;color:var(--primary);padding:clamp(.6rem,1.2vw,.9rem);border-radius:clamp(.4rem,.8vw,.6rem);font-weight:900;font-size:clamp(1.1rem,2.5vw,1.75rem);animation:pulse 2s infinite;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
                 🎉 YOUR TURN! 🎉
               </div>
             ` : ''}
@@ -178,19 +164,31 @@ async function showDisplay(rid, customerQueueNumber) {
       }
     };
     
-    // Generate WAITING QUEUE based on layout setting
+    // Generate WAITING QUEUE cards
     const generateWaitingQueue = () => {
       if (currentSettings.ui.waitingLayout === 'grid') {
-        // GRID LAYOUT (NEW STYLE) WITH ZONE BADGE
         return `
           <div class="card" style="background:linear-gradient(135deg,rgba(249,115,22,.9),rgba(234,88,12,.9));border:4px solid var(--primary);padding:clamp(2rem,4vw,4rem)">
             <h2 class="text-center" style="font-size:clamp(2rem,5vw,4rem);margin-bottom:clamp(1rem,2vw,2rem)">
               ⏳ WAITING QUEUE
             </h2>
             <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(${cardSize},1fr));gap:clamp(1rem,2vw,2rem)">
-
+              ${displayWaitingQueue.map(w => `
+                <div class="card text-center" style="background:white;padding:${cardPadding};display:flex;flex-direction:column;gap:clamp(0.4rem,.8vw,.75rem)">
+                  ${w.zone ? `
+                    <div style="background:linear-gradient(135deg,#ea580c 0%,#c2410c 100%);color:white;padding:clamp(0.35rem,.7vw,.55rem) clamp(0.75rem,1.5vw,1.25rem);border-radius:clamp(0.35rem,.7vw,.55rem);font-size:clamp(0.9rem,2vw,1.4rem);font-weight:700;letter-spacing:0.03em;text-transform:uppercase;box-shadow:0 2px 8px rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.2)">
+                      🏢 ${w.zone}
+                    </div>
+                  ` : ''}
+                  <div style="font-size:${queueFontSize};font-weight:900;color:var(--primary)">
+                    ${w.queueNumber}
+                  </div>
+                  <div style="background:var(--gray-50);padding:clamp(0.75rem,1.5vw,1.25rem);border-radius:clamp(.6rem,1.2vw,.9rem)">
+                    <div style="font-size:${nameFontSize};font-weight:700;color:var(--gray-900);margin-bottom:clamp(.4rem,.8vw,.75rem)">
+                      ${w.name}
+                    </div>
                     ${currentSettings.ui.showPhoneNumbers ? `
-                      <div style="font-size:clamp(1rem,2vw,1.3rem);color:var(--gray-600);font-family:monospace;margin-bottom:clamp(.3rem,.5vw,.5rem)">
+                      <div style="font-size:clamp(0.9rem,1.8vw,1.2rem);color:var(--gray-600);font-family:monospace;margin-bottom:clamp(.25rem,.5vw,.4rem)">
                         ${w.phone}
                       </div>
                     ` : ''}
@@ -204,7 +202,6 @@ async function showDisplay(rid, customerQueueNumber) {
           </div>
         `;
       } else {
-        // LIST LAYOUT (ORIGINAL STYLE) WITH ZONE BADGE
         return `
           <div class="card" style="background:rgba(249,115,22,.2);border:3px solid var(--primary);padding:clamp(1.5rem,3vw,3rem)">
             <h2 class="text-center" style="color:var(--primary);margin-bottom:clamp(1rem,2vw,2rem);font-size:clamp(2rem,5vw,4rem)">⏳ Waiting (${waitingQueue.length})</h2>
@@ -213,11 +210,20 @@ async function showDisplay(rid, customerQueueNumber) {
                 ${displayWaitingQueue.length > 0 ? displayWaitingQueue.slice(0, 15).map((w, i) => {
                   const isTop3 = currentSettings.ui.highlightTop3 && i < 3;
                   return `
-
+                    <div class="card" style="background:${isTop3 ? 'rgba(249,115,22,.9)' : 'rgba(55,65,81,.8)'};padding:clamp(1rem,2vw,2rem);border:${isTop3 ? '3px solid var(--primary)' : '2px solid rgba(156,163,175,.3)'};display:flex;flex-direction:column;gap:clamp(0.4rem,.8vw,.75rem)">
+                      ${w.zone ? `
+                        <div style="background:${isTop3 ? 'rgba(0,0,0,0.2)' : 'rgba(234,88,12,0.9)'};color:white;padding:clamp(0.35rem,.7vw,.55rem) clamp(0.75rem,1.5vw,1.25rem);border-radius:clamp(0.35rem,.7vw,.55rem);font-size:clamp(0.9rem,2vw,1.4rem);font-weight:700;letter-spacing:0.03em;text-transform:uppercase;display:inline-block;align-self:flex-start;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.2)">
+                          🏢 ${w.zone}
+                        </div>
+                      ` : ''}
+                      <div style="display:flex;justify-content:space-between;align-items:center;gap:clamp(.75rem,1.5vw,1rem);flex-wrap:wrap">
+                        <div style="flex:1">
+                          <div style="font-size:clamp(2.5rem,6vw,5rem);font-weight:900;color:${isTop3 ? '#fff' : 'var(--primary)'}">${w.queueNumber}</div>
+                          <div style="font-size:clamp(1.15rem,2.3vw,1.65rem);font-weight:600;color:${isTop3 ? '#fff' : 'rgba(255,255,255,.9)'};margin-top:.4rem">${w.name}</div>
                           ${currentSettings.ui.showPhoneNumbers ? `
-                            <div style="font-size:clamp(1rem,2vw,1.3rem);color:${isTop3 ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.6)'};font-family:monospace">${w.phone}</div>
+                            <div style="font-size:clamp(0.9rem,1.8vw,1.2rem);color:${isTop3 ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.6)'};font-family:monospace;margin-top:.25rem">${w.phone}</div>
                           ` : ''}
-                          <div style="font-size:clamp(1.1rem,2.2vw,1.5rem);color:${isTop3 ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.7)'};margin-top:.3rem">${w.guests} guest${w.guests !== 1 ? 's' : ''}</div>
+                          <div style="font-size:clamp(1rem,2vw,1.4rem);color:${isTop3 ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.7)'};margin-top:.25rem">👥 ${w.guests} guest${w.guests !== 1 ? 's' : ''}</div>
                         </div>
                       </div>
                     </div>
@@ -241,7 +247,6 @@ async function showDisplay(rid, customerQueueNumber) {
             <div class="qr-controls-content">
               <h3>🎛️ Display Settings</h3>
               
-              <!-- QR Position Controls -->
               <div class="control-group">
                 <label style="font-size:.875rem;display:block;margin-bottom:.5rem">QR Position:</label>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
@@ -252,13 +257,11 @@ async function showDisplay(rid, customerQueueNumber) {
                 </div>
               </div>
               
-              <!-- QR Size Control -->
               <div class="control-group qr-size-control">
                 <label>QR Size: <span id="qrSizeLabel">${Math.round(currentSettings.qr.scale * 250)}</span>px</label>
                 <input type="range" class="qr-size-slider" id="qrSizeSlider" min="150" max="450" value="${Math.round(currentSettings.qr.scale * 250)}" step="10" oninput="updateQRSize('${rid}', this.value)">
               </div>
               
-              <!-- QR Visibility -->
               <div class="control-group">
                 <button class="qr-control-btn" onclick="toggleQRVisibility('${rid}')" id="qrVisibilityBtn">
                   ${currentSettings.qr.hidden ? '👁️ Show QR' : '👁️ Hide QR'}
@@ -267,7 +270,6 @@ async function showDisplay(rid, customerQueueNumber) {
               
               <hr style="border:none;border-top:1px solid rgba(255,255,255,.2);margin:1rem 0">
               
-              <!-- SERVING DISPLAY COUNT -->
               <div class="control-group qr-size-control">
                 <label>Serving Display: <span id="servingCountLabel">${currentSettings.ui.servingDisplayCount || 10}</span> cards</label>
                 <input type="range" class="qr-size-slider" id="servingCountSlider" min="1" max="20" value="${currentSettings.ui.servingDisplayCount || 10}" step="1" oninput="updateServingCount('${rid}', this.value)">
@@ -278,23 +280,19 @@ async function showDisplay(rid, customerQueueNumber) {
               
               <hr style="border:none;border-top:1px solid rgba(255,255,255,.2);margin:1rem 0">
               
-              <!-- UI CUSTOMIZATION OPTIONS -->
               <div class="control-group">
                 <label style="font-size:.875rem;display:block;margin-bottom:.75rem;color:#fbbf24;font-weight:700">📊 UI Options:</label>
                 
-                <!-- Show Stats Toggle -->
                 <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer;font-size:.875rem">
                   <input type="checkbox" id="showStats" ${currentSettings.ui.showStats ? 'checked' : ''} onchange="toggleUISetting('${rid}', 'showStats', this.checked)">
                   <span>Show Stats Section</span>
                 </label>
                 
-                <!-- Show Phone Numbers Toggle -->
                 <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer;font-size:.875rem">
                   <input type="checkbox" id="showPhoneNumbers" ${currentSettings.ui.showPhoneNumbers ? 'checked' : ''} onchange="toggleUISetting('${rid}', 'showPhoneNumbers', this.checked)">
                   <span>Show Phone Numbers</span>
                 </label>
                 
-                <!-- Highlight Top 3 Toggle -->
                 <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer;font-size:.875rem">
                   <input type="checkbox" id="highlightTop3" ${currentSettings.ui.highlightTop3 ? 'checked' : ''} onchange="toggleUISetting('${rid}', 'highlightTop3', this.checked)">
                   <span>Highlight Top 3 Waiting</span>
@@ -327,7 +325,6 @@ async function showDisplay(rid, customerQueueNumber) {
               
               <hr style="border:none;border-top:1px solid rgba(255,255,255,.2);margin:1rem 0">
               
-              <!-- Reset Button -->
               <div class="control-group">
                 <button class="qr-control-btn" onclick="resetDisplaySettings('${rid}')" style="width:100%">🔄 Reset All Settings</button>
               </div>
@@ -369,7 +366,6 @@ async function showDisplay(rid, customerQueueNumber) {
         `}
         
         <div class="container">
-          <!-- HEADER WITH HOME BUTTON -->
           <div class="text-center mb" style="padding-bottom:clamp(1rem,2vw,2rem);border-bottom:4px solid var(--primary);position:relative">
             ${customerQueueNumber ? '' : `
               <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:flex-end;padding:.5rem">
@@ -431,7 +427,6 @@ async function showDisplay(rid, customerQueueNumber) {
       </div>
     `);
     
-    // Generate QR code if not customer view
     if (!customerQueueNumber) {
       setTimeout(() => {
         generateQRCode('display-qr', rid);
@@ -474,7 +469,6 @@ const setQRPosition = (rid, position) => {
   
   saveDisplaySettings(rid, settings);
   
-  // Apply immediately
   Object.entries(settings.qr.position).forEach(([key, value]) => {
     qr.style[key] = value;
   });
@@ -504,8 +498,6 @@ const updateServingCount = (rid, count) => {
   saveDisplaySettings(rid, settings);
   
   console.log(`✅ Serving display count changed to: ${count} cards`);
-  
-  // Note: Display will auto-refresh via Firebase listener
 };
 
 const toggleQRVisibility = (rid) => {
@@ -526,19 +518,12 @@ const toggleQRVisibility = (rid) => {
   }
 };
 
-// ============================================================================
-// UI CUSTOMIZATION FUNCTIONS
-// ============================================================================
-
 const toggleUISetting = (rid, setting, value) => {
   const settings = getDisplaySettings(rid);
   settings.ui[setting] = value;
   saveDisplaySettings(rid, settings);
   
   console.log(`✅ UI Setting changed: ${setting} = ${value}`);
-  
-  // Trigger re-render by reloading the display
-  // The Firebase listener will automatically re-render with new settings
 };
 
 const setUIOption = (rid, option, value) => {
@@ -548,7 +533,6 @@ const setUIOption = (rid, option, value) => {
   
   console.log(`✅ UI Option changed: ${option} = ${value}`);
   
-  // Update active button styling
   document.querySelectorAll(`button[onclick*="${option}"]`).forEach(btn => {
     btn.classList.remove('active');
   });
@@ -560,10 +544,7 @@ const resetDisplaySettings = (rid) => {
     return;
   }
   
-  // Reset to default
   saveDisplaySettings(rid, JSON.parse(JSON.stringify(DEFAULT_DISPLAY_SETTINGS)));
-  
-  // Reload page to apply changes
   location.reload();
 };
 
@@ -576,7 +557,6 @@ let qrOffsetX = 0;
 let qrOffsetY = 0;
 
 const startDragQR = (e) => {
-  // Don't drag if clicking settings button
   if (e.target.closest('.qr-toggle-btn')) return;
   
   const qr = document.getElementById('displayQR');
@@ -626,7 +606,6 @@ const stopDragQR = (e) => {
   if (qr) {
     qr.classList.remove('dragging');
     
-    // Save new position
     const rid = window.location.hash.split('/')[2];
     const settings = getDisplaySettings(rid);
     settings.qr.position = {
@@ -661,4 +640,4 @@ window.startDragQR = startDragQR;
 window.dragQR = dragQR;
 window.stopDragQR = stopDragQR;
 
-console.log('✅ QueueApp Enhanced Display Module Loaded - UI Customization + Zone Badges Enabled');
+console.log('✅ QueueApp Enhanced Display - Zone Visibility Improved');
