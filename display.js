@@ -1,3 +1,4 @@
+
 // ============================================================================
 // QUEUEAPP - DISPLAY.JS (ENHANCED WITH UI TOGGLES + ZONE BADGES)
 // Live Display Screen & QR Controls Module with Customizable UI Options
