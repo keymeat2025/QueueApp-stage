@@ -1,4 +1,3 @@
-
 // ============================================================================
 // QUEUEAPP - DISPLAY.JS (ENHANCED WITH UI TOGGLES + ZONE BADGES)
 // Live Display Screen & QR Controls Module with Customizable UI Options
@@ -109,40 +108,58 @@ async function showDisplay(rid, customerQueueNumber) {
     
     // Generate NOW SERVING cards based on card style setting
     const generateNowServingCard = (allocated, isMyTurn) => {
-      if (currentSettings.ui.cardStyle === 'simple') {
-        // ORIGINAL SIMPLE STYLE WITH ZONE BADGE
-        return `
-          <div class="card text-center" style="background:${isMyTurn ? 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%)' : 'white'};padding:${cardPadding};border:4px solid ${isMyTurn ? '#f59e0b' : 'white'};${isMyTurn ? 'animation:pulse-badge 1s infinite;box-shadow:0 0 30px rgba(251,191,36,0.8)' : ''};min-height:280px;display:flex;flex-direction:column;justify-content:center">
-            <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};line-height:1">${allocated.queueNumber}</div>
-            <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin:clamp(0.5rem,1vw,1rem) 0">${allocated.name}</div>
-            ${allocated.zone ? `<div style="font-size:clamp(1rem,2vw,1.3rem);color:${isMyTurn ? 'rgba(255,255,255,0.9)' : 'var(--primary)'};font-weight:600;margin:clamp(0.25rem,0.5vw,0.5rem) 0">🏢 ${allocated.zone}</div>` : ''}
-            ${currentSettings.ui.tableStyle === 'simple' 
-              ? `<div style="font-size:${tableFontSize};font-weight:800;color:${isMyTurn ? 'rgba(255,255,255,0.9)' : 'var(--gray-900)'}">${isMyTurn ? '🎉 YOUR TURN! 🎉' : ''}Table ${allocated.tableNo}</div>`
-              : `<div style="background:${isMyTurn ? 'white' : 'linear-gradient(135deg,var(--success) 0%,#059669 100%)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);box-shadow:0 4px 12px rgba(0,0,0,.2);margin-top:clamp(0.5rem,1vw,1rem)">
-                  <div style="font-size:clamp(.875rem,2vw,1.25rem);font-weight:700;margin-bottom:.25rem">TABLE</div>
-                  <div style="font-size:${tableFontSize};font-weight:900">${allocated.tableNo}</div>
-                </div>`
-            }
-            <div style="font-size:${guestFontSize};color:${isMyTurn ? 'rgba(255,255,255,0.8)' : 'var(--gray-600)'};margin-top:clamp(0.5rem,1vw,1rem)">${allocated.guests} ${allocated.guests === 1 ? 'guest' : 'guests'}</div>
-            ${isMyTurn && currentSettings.ui.tableStyle === 'simple' ? '' : isMyTurn ? `<div style="margin-top:clamp(1rem,2vw,1.5rem);background:white;color:var(--primary);padding:clamp(.75rem,1.5vw,1rem);border-radius:clamp(.5rem,1vw,.75rem);font-weight:900;font-size:clamp(1.25rem,3vw,2rem);animation:pulse 2s infinite">🎉 YOUR TURN! 🎉</div>` : ''}
+
+            
+            <div style="margin-top:${allocated.zone ? 'clamp(2.5rem,5vw,3.5rem)' : '0'}">
+              <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};line-height:1;margin-bottom:clamp(0.75rem,2vw,1.25rem)">${allocated.queueNumber}</div>
+              
+              <div style="background:${isMyTurn ? 'rgba(255,255,255,0.2)' : 'var(--gray-50)'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(0.75rem,1.5vw,1rem);margin:0 auto;max-width:90%">
+                <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-bottom:clamp(0.5rem,1vw,0.75rem)">${allocated.name}</div>
+                <div style="font-size:${guestFontSize};color:${isMyTurn ? 'rgba(255,255,255,0.9)' : 'var(--gray-600)'};font-weight:600">
+                  👥 ${allocated.guests} Guest${allocated.guests === 1 ? '' : 's'}
+                </div>
+              </div>
+              
+              ${currentSettings.ui.tableStyle === 'simple' 
+                ? `<div style="font-size:${tableFontSize};font-weight:800;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-top:clamp(1rem,2vw,1.5rem)">Table ${allocated.tableNo}</div>`
+                : `<div style="background:${isMyTurn ? 'white' : 'linear-gradient(135deg,var(--success) 0%,#059669 100%)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);box-shadow:0 4px 12px rgba(0,0,0,.2);margin-top:clamp(1rem,2vw,1.5rem);max-width:90%;margin-left:auto;margin-right:auto">
+                    <div style="font-size:clamp(.875rem,2vw,1.25rem);font-weight:700;margin-bottom:.25rem">TABLE</div>
+                    <div style="font-size:${tableFontSize};font-weight:900">${allocated.tableNo}</div>
+                  </div>`
+              }
+              
+              ${isMyTurn ? `
+                <div style="margin-top:clamp(1rem,2vw,1.5rem);background:white;color:var(--primary);padding:clamp(.75rem,1.5vw,1rem);border-radius:clamp(.5rem,1vw,.75rem);font-weight:900;font-size:clamp(1.25rem,3vw,2rem);animation:pulse 2s infinite;max-width:90%;margin-left:auto;margin-right:auto">
+                  🎉 YOUR TURN! 🎉
+                </div>
+              ` : ''}
+            </div>
           </div>
         `;
       } else {
-        // ENHANCED STYLE WITH NESTED BOXES + ZONE BADGE
+        // ENHANCED STYLE WITH PROMINENT ZONE BADGE AT TOP
         return `
-          <div class="card text-center" style="background:${isMyTurn ? 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%)' : 'white'};padding:${cardPadding};border:4px solid ${isMyTurn ? '#f59e0b' : 'var(--success)'}${isMyTurn ? ';animation:pulse 2s infinite;box-shadow:0 0 40px rgba(251,191,36,.8)' : ''}">
-            <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};margin-bottom:clamp(.5rem,1vw,1rem);text-shadow:${isMyTurn ? '0 4px 8px rgba(0,0,0,.3)' : 'none'}">
+          <div class="card text-center" style="background:${isMyTurn ? 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%)' : 'white'};padding:${cardPadding};border:4px solid ${isMyTurn ? '#f59e0b' : 'var(--success)'}${isMyTurn ? ';animation:pulse 2s infinite;box-shadow:0 0 40px rgba(251,191,36,.8)' : ''};position:relative">
+            
+            ${allocated.zone ? `
+              <div style="background:${isMyTurn ? 'rgba(255,255,255,0.95)' : 'var(--primary)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(0.5rem,1vw,0.75rem) clamp(0.75rem,1.5vw,1rem);border-radius:clamp(0.5rem,1vw,0.75rem);font-size:clamp(0.875rem,1.8vw,1.125rem);font-weight:800;margin-bottom:clamp(0.75rem,1.5vw,1rem);box-shadow:0 2px 8px rgba(0,0,0,0.15);display:inline-block;max-width:90%">
+                🏢 ${allocated.zone.toUpperCase()}
+              </div>
+            ` : ''}
+            
+            <div style="font-size:${queueFontSize};font-weight:900;color:${isMyTurn ? 'white' : 'var(--success)'};margin-bottom:clamp(.75rem,1.5vw,1rem);text-shadow:${isMyTurn ? '0 4px 8px rgba(0,0,0,.3)' : 'none'};line-height:1">
               ${allocated.queueNumber}
             </div>
-            <div style="background:${isMyTurn ? 'rgba(255,255,255,.3)' : 'var(--gray-50)'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);margin-bottom:clamp(.75rem,1.5vw,1rem)">
-              <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-bottom:clamp(.5rem,1vw,1rem);text-shadow:${isMyTurn ? '0 2px 4px rgba(0,0,0,.2)' : 'none'}">
+            
+            <div style="background:${isMyTurn ? 'rgba(255,255,255,.25)' : 'var(--gray-50)'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);margin-bottom:clamp(.75rem,1.5vw,1rem)">
+              <div style="font-size:${nameFontSize};font-weight:700;color:${isMyTurn ? 'white' : 'var(--gray-900)'};margin-bottom:clamp(.5rem,1vw,0.75rem);text-shadow:${isMyTurn ? '0 2px 4px rgba(0,0,0,.2)' : 'none'}">
                 ${allocated.name}
               </div>
-              ${allocated.zone ? `<div style="font-size:clamp(1rem,2vw,1.3rem);color:${isMyTurn ? 'rgba(255,255,255,0.9)' : 'var(--primary)'};font-weight:600;margin-bottom:clamp(.5rem,1vw,1rem)">🏢 ${allocated.zone}</div>` : ''}
-              <div style="font-size:${guestFontSize};color:${isMyTurn ? 'rgba(255,255,255,.9)' : 'var(--gray-600)'};font-weight:600">
+              <div style="font-size:${guestFontSize};color:${isMyTurn ? 'rgba(255,255,255,.95)' : 'var(--gray-600)'};font-weight:600">
                 👥 ${allocated.guests} Guest${allocated.guests !== 1 ? 's' : ''}
               </div>
             </div>
+            
             ${currentSettings.ui.tableStyle === 'gradient' 
               ? `<div style="background:${isMyTurn ? 'white' : 'linear-gradient(135deg,var(--success) 0%,#059669 100%)'};color:${isMyTurn ? 'var(--primary)' : 'white'};padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem);box-shadow:0 4px 12px rgba(0,0,0,.2)">
                   <div style="font-size:clamp(.875rem,2vw,1.25rem);font-weight:700;margin-bottom:.25rem">TABLE</div>
@@ -150,6 +167,7 @@ async function showDisplay(rid, customerQueueNumber) {
                 </div>`
               : `<div style="font-size:${tableFontSize};font-weight:800;color:${isMyTurn ? 'white' : 'var(--gray-900)'}">Table ${allocated.tableNo}</div>`
             }
+            
             ${isMyTurn ? `
               <div style="margin-top:clamp(1rem,2vw,1.5rem);background:white;color:var(--primary);padding:clamp(.75rem,1.5vw,1rem);border-radius:clamp(.5rem,1vw,.75rem);font-weight:900;font-size:clamp(1.25rem,3vw,2rem);animation:pulse 2s infinite">
                 🎉 YOUR TURN! 🎉
@@ -170,16 +188,7 @@ async function showDisplay(rid, customerQueueNumber) {
               ⏳ WAITING QUEUE
             </h2>
             <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(${cardSize},1fr));gap:clamp(1rem,2vw,2rem)">
-              ${displayWaitingQueue.map(w => `
-                <div class="card text-center" style="background:white;padding:${cardPadding}">
-                  <div style="font-size:${queueFontSize};font-weight:900;color:var(--primary);margin-bottom:clamp(.5rem,1vw,1rem)">
-                    ${w.queueNumber}
-                  </div>
-                  <div style="background:var(--gray-50);padding:clamp(1rem,2vw,1.5rem);border-radius:clamp(.75rem,1.5vw,1rem)">
-                    <div style="font-size:${nameFontSize};font-weight:700;color:var(--gray-900);margin-bottom:clamp(.5rem,1vw,1rem)">
-                      ${w.name}
-                    </div>
-                    ${w.zone ? `<div style="font-size:clamp(1rem,2vw,1.3rem);color:var(--primary);font-weight:600;margin-bottom:clamp(.5rem,1vw,1rem)">🏢 ${w.zone}</div>` : ''}
+
                     ${currentSettings.ui.showPhoneNumbers ? `
                       <div style="font-size:clamp(1rem,2vw,1.3rem);color:var(--gray-600);font-family:monospace;margin-bottom:clamp(.3rem,.5vw,.5rem)">
                         ${w.phone}
@@ -204,12 +213,7 @@ async function showDisplay(rid, customerQueueNumber) {
                 ${displayWaitingQueue.length > 0 ? displayWaitingQueue.slice(0, 15).map((w, i) => {
                   const isTop3 = currentSettings.ui.highlightTop3 && i < 3;
                   return `
-                    <div class="card" style="background:${isTop3 ? 'rgba(249,115,22,.9)' : 'rgba(55,65,81,.8)'};padding:clamp(1rem,2vw,2rem);border:${isTop3 ? '3px solid var(--primary)' : '2px solid rgba(156,163,175,.3)'}">
-                      <div style="display:flex;justify-content:space-between;align-items:center;gap:clamp(.75rem,1.5vw,1rem);flex-wrap:wrap">
-                        <div style="flex:1">
-                          <div style="font-size:clamp(3rem,8vw,6rem);font-weight:900;color:${isTop3 ? '#fff' : 'var(--primary)'}">${w.queueNumber}</div>
-                          <div style="font-size:clamp(1.25rem,2.5vw,1.8rem);font-weight:600;color:${isTop3 ? '#fff' : 'rgba(255,255,255,.9)'};margin-top:.5rem">${w.name}</div>
-                          ${w.zone ? `<div style="font-size:clamp(1rem,2vw,1.3rem);color:${isTop3 ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.8)'};font-weight:600;margin-top:.3rem">🏢 ${w.zone}</div>` : ''}
+
                           ${currentSettings.ui.showPhoneNumbers ? `
                             <div style="font-size:clamp(1rem,2vw,1.3rem);color:${isTop3 ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.6)'};font-family:monospace">${w.phone}</div>
                           ` : ''}
