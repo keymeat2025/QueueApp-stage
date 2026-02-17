@@ -1,8 +1,9 @@
-
 // ============================================================================
 // QUEUEAPP - MULTIZONE.JS (WITH DEFAULT GROUND FLOOR)
 // Multi-Zone Queue Management Module (Premium Feature)
-// Version: 2.1 - With Default Ground Floor Zone
+// Version: 2.2 - Bug Fixes
+// FIX 1: Added incrementZoneScan() - scansToday counter was never updating
+// FIX 2: deleteZone() now clears activeZoneFilter if deleted zone was active
 // ============================================================================
 
 console.log('🏢 Loading Multi-Zone Module (with defaults)...');
@@ -26,7 +27,37 @@ function getUpgradeMessage(planPrice){planPrice=planPrice||1999;if(planPrice===1
 let activeZoneFilter=null;
 function setZoneFilter(rid,zoneId){activeZoneFilter=zoneId;console.log('[ZONE FILTER] Set to:',zoneId||'all')}
 function getZoneFilter(){return activeZoneFilter}
-function clearZoneFilter(){activeZoneFilter=null}
+function clearZoneFilter(){activeZoneFilter=null;console.log('[ZONE FILTER] Cleared')}
+
+// ============================================================================
+// FIX 1: INCREMENT ZONE SCAN COUNTER
+// core.js calls this when a customer joins with a zone.
+// Was missing entirely — scansToday counter always showed 0.
+// ============================================================================
+
+async function incrementZoneScan(rid, zoneId) {
+  const restaurant = DB.restaurants[rid];
+  if (!restaurant || !restaurant.zones || !restaurant.zones.list) return;
+
+  const zone = restaurant.zones.list.find(function(z) { return z.id === zoneId; });
+  if (!zone) return;
+
+  // Increment in local cache immediately (optimistic update)
+  zone.scansToday = (zone.scansToday || 0) + 1;
+  DB.restaurants[rid] = restaurant;
+  DB.save();
+
+  // Persist to Firebase
+  try {
+    await db.collection('restaurants').doc(rid).update({ zones: restaurant.zones });
+    console.log('[ZONE SCAN] Incremented scansToday for zone:', zoneId, '→', zone.scansToday);
+  } catch (err) {
+    console.error('[ZONE SCAN] Error updating scan count:', err);
+    // Revert optimistic update on failure
+    zone.scansToday = Math.max(0, zone.scansToday - 1);
+    DB.save();
+  }
+}
 
 // ============================================================================
 // CREATE DEFAULT GROUND FLOOR ZONE
@@ -53,16 +84,44 @@ function applyZoneFilter(queue,zoneFilter){if(!zoneFilter){return queue}return q
 
 function showZoneConfigModal(rid){const restaurant=DB.restaurants[rid];const zonesEnabled=isMultiZoneEnabled(restaurant);const existingZones=zonesEnabled?restaurant.zones.list:[];const planPrice=restaurant.planPrice||1999;const maxZones=getMaxZonesForPlan(planPrice);let tierName;if(planPrice===1999)tierName='Base Premium';else if(planPrice===2598)tierName='4-5 Zones Addon';else if(planPrice===2998)tierName='6-10 Zones Addon';else tierName='Enterprise';const modalHTML=`<div id="zoneConfigModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem"><div style="background:white;border-radius:1rem;padding:2rem;max-width:600px;width:100%;max-height:90vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem"><h2 style="margin:0;color:#f97316">⚙️ Configure Zones</h2><button onclick="closeZoneConfigModal()" style="background:#ef4444;color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700">✕ Close</button></div><div style="background:${zonesEnabled?'#f0fdf4':'#f9fafb'};padding:1.25rem;border-radius:0.75rem;margin-bottom:1.5rem;border:2px solid ${zonesEnabled?'#22c55e':'#e5e7eb'}"><label style="display:flex;align-items:center;gap:1rem;cursor:pointer"><input type="checkbox" id="enableZonesCheckbox" ${zonesEnabled?'checked':''} onchange="toggleZonesEnabled('${rid}')" style="width:24px;height:24px;cursor:pointer;accent-color:#22c55e"><div><p style="margin:0;font-weight:700;font-size:1rem">${zonesEnabled?'✅':'☐'} Enable Multi-Zone QR Codes</p><p style="margin:0.25rem 0 0 0;font-size:0.875rem;color:#6b7280">Create separate QR codes for different floors/zones</p></div></label></div><div id="zonesListContainer">${zonesEnabled&&existingZones.length>0?`<div style="background:#dbeafe;padding:1rem;border-radius:0.75rem;margin-bottom:1rem;text-align:center"><p style="margin:0 0 0.5rem 0;font-size:0.875rem;color:#1e40af"><strong>Current Tier:</strong> ${tierName} (₹${planPrice}/quarter)</p><p style="margin:0;font-size:0.875rem;color:#1e40af"><strong>Zones Used:</strong> ${existingZones.length} / ${maxZones}</p></div><h3 style="margin:0 0 1rem 0;font-size:1.125rem">Active Zones:</h3><div id="zonesList">${existingZones.map((zone,index)=>`<div style="background:#f9fafb;padding:1.25rem;border-radius:0.75rem;margin-bottom:1rem;border:2px solid #e5e7eb"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.75rem"><div style="flex:1"><p style="margin:0;font-weight:700;font-size:1rem">${zone.emoji} ${zone.name}</p><p style="margin:0.25rem 0 0 0;font-size:0.875rem;color:#6b7280">Scans today: ${zone.scansToday||0}</p></div><div style="display:flex;gap:0.5rem"><button onclick="editZone('${rid}', ${index})" style="background:#3b82f6;color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.875rem">✏️ Edit</button><button onclick="deleteZone('${rid}', ${index})" style="background:#ef4444;color:white;border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:700;font-size:0.875rem">🗑️</button></div></div></div>`).join('')}</div>`:zonesEnabled?`<div style="background:#fef9c3;padding:1.5rem;border-radius:0.75rem;text-align:center;margin-bottom:1.5rem"><p style="margin:0;font-size:0.875rem;color:#854d0e">No zones configured yet. Click "Add New Zone" below to get started.</p></div>`:''}</div>${zonesEnabled?`<button onclick="showAddZoneForm('${rid}')" style="background:#22c55e;color:white;border:none;padding:1rem 1.5rem;border-radius:0.75rem;cursor:pointer;font-weight:700;width:100%;margin-bottom:1.5rem;font-size:1rem">➕ Add New Zone</button>`:''}<button onclick="closeZoneConfigModal()" style="background:#6b7280;color:white;border:none;padding:1rem;border-radius:0.75rem;cursor:pointer;font-weight:700;width:100%">Done</button></div></div>`;document.body.insertAdjacentHTML('beforeend',modalHTML)}
 function closeZoneConfigModal(){const modal=document.getElementById('zoneConfigModal');if(modal)modal.remove();const addModal=document.getElementById('addZoneModal');if(addModal)addModal.remove()}
-async function toggleZonesEnabled(rid){const checkbox=document.getElementById('enableZonesCheckbox');const enabled=checkbox.checked;const restaurant=DB.restaurants[rid];if(enabled){if(!restaurant.zones){restaurant.zones={enabled:true,mode:'filter',list:[],createdAt:new Date().toISOString()}}else{restaurant.zones.enabled=true}if(restaurant.zones.list.length===0){await createDefaultGroundFloor(rid)}}else{if(restaurant.zones){restaurant.zones.enabled=false}}try{await db.collection('restaurants').doc(rid).update({zones:restaurant.zones})}catch(err){console.error('Error saving zones:',err)}DB.restaurants[rid]=restaurant;DB.save();closeZoneConfigModal();setTimeout(function(){showZoneConfigModal(rid)},100)}
+async function toggleZonesEnabled(rid){const checkbox=document.getElementById('enableZonesCheckbox');const enabled=checkbox.checked;const restaurant=DB.restaurants[rid];if(enabled){if(!restaurant.zones){restaurant.zones={enabled:true,mode:'filter',list:[],createdAt:new Date().toISOString()}}else{restaurant.zones.enabled=true}if(restaurant.zones.list.length===0){await createDefaultGroundFloor(rid)}}else{if(restaurant.zones){restaurant.zones.enabled=false}clearZoneFilter()}try{await db.collection('restaurants').doc(rid).update({zones:restaurant.zones})}catch(err){console.error('Error saving zones:',err)}DB.restaurants[rid]=restaurant;DB.save();closeZoneConfigModal();setTimeout(function(){showZoneConfigModal(rid)},100)}
 function showAddZoneForm(rid){const formHTML=`<div id="addZoneModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10001;padding:1rem"><div style="background:white;border-radius:1rem;padding:2rem;max-width:500px;width:100%"><h3 style="margin:0 0 1.5rem 0;color:#f97316">➕ Add New Zone</h3><div style="margin-bottom:1.5rem"><label style="display:block;font-weight:700;margin-bottom:0.5rem;font-size:0.875rem">Zone Name:</label><input type="text" id="newZoneName" placeholder="e.g., First Floor, Second Floor, Garden" style="width:100%;padding:0.75rem;border:2px solid #e5e7eb;border-radius:0.5rem;font-size:1rem"></div><div style="margin-bottom:1.5rem"><label style="display:block;font-weight:700;margin-bottom:0.5rem;font-size:0.875rem">Zone Icon:</label><div style="display:flex;gap:0.5rem;flex-wrap:wrap">${['🏢','🏬','🏪','🌳','🏖️','🍽️','🎪','🏰','🌺','☕'].map(emoji=>`<button onclick="selectZoneEmoji('${emoji}')" class="emoji-select-btn" style="background:#f3f4f6;border:2px solid #e5e7eb;padding:0.75rem;border-radius:0.5rem;cursor:pointer;font-size:1.5rem;transition:all 0.2s">${emoji}</button>`).join('')}</div><input type="hidden" id="selectedEmoji" value="🏢"></div><div style="display:flex;gap:0.75rem"><button onclick="document.getElementById('addZoneModal').remove()" style="background:#6b7280;color:white;border:none;padding:1rem;border-radius:0.75rem;cursor:pointer;font-weight:700;flex:1">Cancel</button><button onclick="saveNewZone('${rid}')" style="background:#22c55e;color:white;border:none;padding:1rem;border-radius:0.75rem;cursor:pointer;font-weight:700;flex:2">💾 Save Zone</button></div></div></div>`;document.body.insertAdjacentHTML('beforeend',formHTML)}
 function selectZoneEmoji(emoji){document.getElementById('selectedEmoji').value=emoji;document.querySelectorAll('.emoji-select-btn').forEach(function(btn){btn.style.background='#f3f4f6';btn.style.borderColor='#e5e7eb'});event.target.style.background='#fef3c7';event.target.style.borderColor='#f59e0b'}
 async function saveNewZone(rid){const zoneName=document.getElementById('newZoneName').value.trim();const emoji=document.getElementById('selectedEmoji').value;if(!zoneName){alert('⚠️ Please enter a zone name');return}const restaurant=DB.restaurants[rid];const currentZoneCount=restaurant.zones.list.length;const planPrice=restaurant.planPrice||1999;const maxZones=getMaxZonesForPlan(planPrice);if(currentZoneCount>=maxZones){const upgradeMsg=getUpgradeMessage(planPrice);alert(`⚠️ Zone Limit Reached!\n\nYour current plan (₹${planPrice}/quarter) allows maximum ${maxZones} zones.\n\nYou currently have ${currentZoneCount} zones configured.\n\n📈 ${upgradeMsg}`);return}const zoneId=generateZoneId(zoneName);const exists=restaurant.zones.list.some(function(z){return z.id===zoneId});if(exists){alert('⚠️ A zone with this name already exists');return}const newZone={id:zoneId,name:zoneName,emoji:emoji,scansToday:0,enabled:true,qrCode:getZoneQRCode(rid,zoneId),createdAt:new Date().toISOString()};restaurant.zones.list.push(newZone);try{await db.collection('restaurants').doc(rid).update({zones:restaurant.zones})}catch(err){console.error('Error saving zone:',err);alert('❌ Error saving zone. Please try again.');return}DB.restaurants[rid]=restaurant;DB.save();const remainingZones=maxZones-currentZoneCount-1;if(remainingZones<=1&&remainingZones>0){const upgradeMsg=getUpgradeMessage(planPrice);alert(`✅ Zone added successfully!\n\n⚠️ Note: You have ${remainingZones} zone slot${remainingZones!==1?'s':''} remaining.\n\n${upgradeMsg}`)}else{alert('✅ Zone added successfully!')}document.getElementById('addZoneModal').remove();closeZoneConfigModal();setTimeout(function(){showZoneConfigModal(rid)},100)}
 function editZone(rid,index){const restaurant=DB.restaurants[rid];const zone=restaurant.zones.list[index];const newName=prompt('Edit Zone Name:',zone.name);if(!newName||newName.trim()==='')return;zone.name=newName.trim();db.collection('restaurants').doc(rid).update({zones:restaurant.zones}).catch(function(err){console.error('Error updating zone:',err)});DB.restaurants[rid]=restaurant;DB.save();closeZoneConfigModal();setTimeout(function(){showZoneConfigModal(rid)},100)}
-async function deleteZone(rid,index){const restaurant=DB.restaurants[rid];const zone=restaurant.zones.list[index];if(!confirm('Delete zone "'+zone.name+'"?\n\nThis cannot be undone.')){return}restaurant.zones.list.splice(index,1);try{await db.collection('restaurants').doc(rid).update({zones:restaurant.zones})}catch(err){console.error('Error deleting zone:',err)}DB.restaurants[rid]=restaurant;DB.save();alert('✅ Zone deleted');closeZoneConfigModal();setTimeout(function(){showZoneConfigModal(rid)},100)}
+
+// ============================================================================
+// FIX 2: deleteZone - clear activeZoneFilter if deleted zone was selected
+// Previously: deleting the active zone left filter pointing at ghost zone
+//             → admin queue showed "No customers" for the deleted zone
+// ============================================================================
+
+async function deleteZone(rid,index){
+  const restaurant=DB.restaurants[rid];
+  const zone=restaurant.zones.list[index];
+  if(!confirm('Delete zone "'+zone.name+'"?\n\nThis cannot be undone.')){return}
+
+  // FIX: If the zone being deleted is currently the active filter, clear it
+  // Otherwise the admin queue will filter on a zone that no longer exists
+  if(getZoneFilter()===zone.id){
+    clearZoneFilter();
+    console.log('[DELETE ZONE] Cleared active filter for deleted zone:', zone.id);
+  }
+
+  restaurant.zones.list.splice(index,1);
+  try{await db.collection('restaurants').doc(rid).update({zones:restaurant.zones})}catch(err){console.error('Error deleting zone:',err)}
+  DB.restaurants[rid]=restaurant;DB.save();
+  alert('✅ Zone deleted');
+  closeZoneConfigModal();
+  setTimeout(function(){showZoneConfigModal(rid)},100)
+}
 
 // ============================================================================
 // EXPORT TO WINDOW
 // ============================================================================
 
 window.getZoneQRCode=getZoneQRCode;window.generateZoneId=generateZoneId;window.getZoneName=getZoneName;window.getZone=getZone;window.isMultiZoneEnabled=isMultiZoneEnabled;window.getMaxZonesForPlan=getMaxZonesForPlan;window.getUpgradeMessage=getUpgradeMessage;window.generateMultiZoneUI=generateMultiZoneUI;window.filterZone=filterZone;window.applyZoneFilter=applyZoneFilter;window.setZoneFilter=setZoneFilter;window.getZoneFilter=getZoneFilter;window.clearZoneFilter=clearZoneFilter;window.showZoneConfigModal=showZoneConfigModal;window.closeZoneConfigModal=closeZoneConfigModal;window.toggleZonesEnabled=toggleZonesEnabled;window.showAddZoneForm=showAddZoneForm;window.selectZoneEmoji=selectZoneEmoji;window.saveNewZone=saveNewZone;window.editZone=editZone;window.deleteZone=deleteZone;window.createDefaultGroundFloor=createDefaultGroundFloor;
-console.log('✅ QueueApp Multi-Zone Module Loaded (v2.1 - Default Ground Floor)');
+window.incrementZoneScan=incrementZoneScan;
+console.log('✅ QueueApp Multi-Zone Module Loaded (v2.2)');
+console.log('✅ Fix 1: incrementZoneScan() added - scansToday counter now works');
+console.log('✅ Fix 2: deleteZone() clears activeZoneFilter to prevent ghost filtering');
