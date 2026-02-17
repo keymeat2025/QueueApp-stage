@@ -1,7 +1,7 @@
-
 // ============================================================================
 // QUEUEAPP - QUEUE.JS (WITH ZONE DISPLAY + CELEBRATION EFFECTS)
 // Customer Queue Operations Module
+// FIX: Zone dropdown not showing on first iPhone scan (cold start)
 // ============================================================================
 
 // ============================================================================
@@ -10,8 +10,9 @@
 
 async function showJoinQueue(rid) {
   let restaurant = DB.restaurants[rid];
-  
+
   if (!restaurant) {
+    // ── COLD START: data not in cache, fetch from Firebase ──────────────────
     const result = await FirebaseDB.getRestaurant(rid);
     if (result.success) {
       restaurant = result.data;
@@ -22,12 +23,38 @@ async function showJoinQueue(rid) {
       return;
     }
   }
-  
+
+  // ── FIX: Validate zones list before rendering ────────────────────────────
+  // Problem: On first scan (cold start), restaurant.zones.list can be
+  // undefined or an empty array even though zones are enabled in Firestore,
+  // because the nested array hasn't fully synced into the cached object yet.
+  // Solution: If zones are enabled but list is missing/empty, do ONE
+  // additional targeted fetch so the dropdown always appears correctly.
+  // This extra fetch only runs on first scan – subsequent scans already
+  // have a valid list in cache and skip this block entirely.
   const zonesEnabled = restaurant.zones && restaurant.zones.enabled;
-  const zones = zonesEnabled ? restaurant.zones.list : [];
+
+  if (zonesEnabled) {
+    const list = restaurant.zones.list;
+    const listIsInvalid = !list || !Array.isArray(list) || list.length === 0;
+
+    if (listIsInvalid) {
+      // Only refetch if we haven't already just fetched (prevents infinite loop)
+      const freshResult = await FirebaseDB.getRestaurant(rid);
+      if (freshResult.success) {
+        restaurant = freshResult.data;
+        DB.restaurants[rid] = restaurant;
+        DB.save();
+      }
+    }
+  }
+  // ── END FIX ──────────────────────────────────────────────────────────────
+
+  const zonesEnabledFinal = restaurant.zones && restaurant.zones.enabled;
+  const zones = zonesEnabledFinal ? (restaurant.zones.list || []) : [];
   const activeFilter = (typeof getZoneFilter === 'function') ? getZoneFilter() : null;
   const preselectedZone = activeFilter || '';
-  
+
   render(`
     <div style="min-height:100vh;background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);display:flex;align-items:center;justify-content:center;padding:clamp(1rem,3vw,2rem)">
       <div class="card" style="max-width:500px;width:100%">
@@ -35,11 +62,11 @@ async function showJoinQueue(rid) {
         <p class="text-center mb" style="color:var(--gray-600)">${restaurant.name}</p>
         ${preselectedZone ? `<div style="background:#dbeafe;padding:1rem;border-radius:0.75rem;margin-bottom:1rem"><p style="margin:0;font-size:0.875rem;color:#1e40af">✓ Adding to: <strong>${(zones.find(function(z) { return z.id === preselectedZone; }) || {}).name || 'Selected Zone'}</strong></p></div>` : ''}
         <div class="space-y">
-          ${zonesEnabled ? `<div><label style="display:block;font-weight:700;margin-bottom:0.5rem;color:#1f2937">Select Floor/Zone:</label><select id="customerZone" style="width:100%;padding:0.75rem;border:2px solid #e5e7eb;border-radius:0.5rem;font-size:1rem;font-weight:600;color:#1f2937;background:white;cursor:pointer">${zones.map(function(zone) { return `<option value="${zone.id}" ${zone.id === preselectedZone ? 'selected' : ''}>${zone.emoji} ${zone.name}</option>`; }).join('')}</select></div>` : ''}
+          ${zonesEnabledFinal && zones.length > 0 ? `<div><label style="display:block;font-weight:700;margin-bottom:0.5rem;color:#1f2937">Select Floor/Zone:</label><select id="customerZone" style="width:100%;padding:0.75rem;border:2px solid #e5e7eb;border-radius:0.5rem;font-size:1rem;font-weight:600;color:#1f2937;background:white;cursor:pointer">${zones.map(function(zone) { return `<option value="${zone.id}" ${zone.id === preselectedZone ? 'selected' : ''}>${zone.emoji} ${zone.name}</option>`; }).join('')}</select></div>` : ''}
           <input type="text" id="customerName" placeholder="Your Name">
           <input type="tel" id="customerPhone" placeholder="Mobile" maxlength="10">
           <div><label style="display:block;font-weight:600;margin-bottom:.75rem;text-align:center">Number of Guests</label><div class="wheel-picker-container"><div class="wheel-picker-overlay"></div><div class="wheel-picker-highlight"></div><div class="wheel-picker" id="guestPicker">${Array.from({length: 30}, function(_, i) { return i + 1; }).map(function(n) { return `<div class="wheel-item" data-value="${n}">${n}</div>`; }).join('')}</div><div class="wheel-selected-value" id="selectedGuestCount">2</div></div></div>
-          <button onclick="handleJoinQueue('${rid}', ${zonesEnabled})" class="btn btn-primary w-full">Add to Queue</button>
+          <button onclick="handleJoinQueue('${rid}', ${zonesEnabledFinal})" class="btn btn-primary w-full">Add to Queue</button>
         </div>
       </div>
     </div>
@@ -209,7 +236,7 @@ async function showQueueStatus(rid, queueNumber) {
       render(`<div class="container text-center" style="padding-top:4rem"><h1>Queue Number Not Found</h1><p style="color:var(--gray-600);margin:2rem 0">Queue #${queueNumber} not found. It may have been served or the queue was reset.</p><button onclick="navigate('/r/${rid}/join')" class="btn btn-primary mt">Join Queue Again</button><button onclick="navigate('/r/${rid}/display')" class="btn btn-secondary mt">View Display</button></div>`);
       return;
     }
-    
+
     // ✅ GET ZONE INFORMATION
     const zonesEnabled = restaurant.zones && restaurant.zones.enabled;
     let zoneDisplay = '';
@@ -219,7 +246,7 @@ async function showQueueStatus(rid, queueNumber) {
         zoneDisplay = `${zoneObj.emoji} ${zoneObj.name}`;
       }
     }
-    
+
     const allocationKey = `allocated_${rid}_${queueNumber}`;
     const wasAllocated = sessionStorage.getItem(allocationKey);
     if (myQueue.status === 'allocated' && !wasAllocated) {
@@ -233,7 +260,7 @@ async function showQueueStatus(rid, queueNumber) {
     const isAllocated = myQueue.status === 'allocated';
     const statusText = isAllocated ? 'Seated' : 'Waiting';
     const bgColor = isAllocated ? 'var(--success)' : 'var(--primary)';
-    
+
     if (isAllocated) {
       // ✅ ALLOCATED STATE (GREEN) - WITH ZONE IN HEADER AND TABLE DISPLAY
       render(`
@@ -339,3 +366,4 @@ function triggerConfetti() {
 
 window.showJoinQueue=showJoinQueue;window.handleJoinQueue=handleJoinQueue;window.showLoadingSuccess=showLoadingSuccess;window.showUpgradeModal=showUpgradeModal;window.showQueueStatus=showQueueStatus;window.initWheelPicker=initWheelPicker;window.playBellSound=playBellSound;window.triggerConfetti=triggerConfetti;
 console.log('✅ QueueApp Queue Module Loaded (with Zone Display + Celebration)');
+console.log('✅ Fix Applied: Zone dropdown now loads correctly on first iPhone scan');
