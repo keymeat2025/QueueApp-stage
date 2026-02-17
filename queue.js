@@ -1,7 +1,8 @@
 // ============================================================================
 // QUEUEAPP - QUEUE.JS (WITH ZONE DISPLAY + CELEBRATION EFFECTS)
 // Customer Queue Operations Module
-// FIX: Zone dropdown not showing on first iPhone scan (cold start)
+// FIX 1: Zone dropdown not showing on first iPhone scan (cold start)
+// FIX 2: Stale cache showing deleted zones (e.g. private/incognito tabs)
 // ============================================================================
 
 // ============================================================================
@@ -9,46 +10,40 @@
 // ============================================================================
 
 async function showJoinQueue(rid) {
-  let restaurant = DB.restaurants[rid];
+  // ── ALWAYS fetch fresh data from Firebase for customer join page ──────────
+  // WHY: This page is public-facing and must show accurate zone data.
+  //
+  // Two bugs were caused by trusting localStorage cache:
+  //
+  // BUG 1 (Cold start): On first scan, zones.list was undefined/empty in cache
+  //   because the nested Firebase array hadn't synced yet → dropdown missing.
+  //
+  // BUG 2 (Stale cache): Admin deletes a zone → cache still has old zone →
+  //   private/incognito tabs (with isolated localStorage) showed deleted zones
+  //   → customers joined queue with a zone that no longer exists.
+  //
+  // FIX: Always fetch from Firebase for this page. Cache is only used as a
+  //   fallback if Firebase is unreachable (offline scenario).
+  //   Admin pages are unaffected — they manage their own cache separately.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  let restaurant = null;
+
+  const freshResult = await FirebaseDB.getRestaurant(rid);
+  if (freshResult.success) {
+    // Always use fresh Firebase data → zones are always current
+    restaurant = freshResult.data;
+    DB.restaurants[rid] = restaurant;  // update cache with fresh data
+    DB.save();
+  } else {
+    // Firebase unreachable → fall back to cache so offline still works
+    restaurant = DB.restaurants[rid];
+  }
 
   if (!restaurant) {
-    // ── COLD START: data not in cache, fetch from Firebase ──────────────────
-    const result = await FirebaseDB.getRestaurant(rid);
-    if (result.success) {
-      restaurant = result.data;
-      DB.restaurants[rid] = restaurant;
-      DB.save();
-    } else {
-      render(`<div class="container text-center" style="padding-top:4rem"><h1 style="color:var(--danger)">Restaurant Not Found</h1><button onclick="navigate('/')" class="btn btn-primary mt">Go Home</button></div>`);
-      return;
-    }
+    render(`<div class="container text-center" style="padding-top:4rem"><h1 style="color:var(--danger)">Restaurant Not Found</h1><button onclick="navigate('/')" class="btn btn-primary mt">Go Home</button></div>`);
+    return;
   }
-
-  // ── FIX: Validate zones list before rendering ────────────────────────────
-  // Problem: On first scan (cold start), restaurant.zones.list can be
-  // undefined or an empty array even though zones are enabled in Firestore,
-  // because the nested array hasn't fully synced into the cached object yet.
-  // Solution: If zones are enabled but list is missing/empty, do ONE
-  // additional targeted fetch so the dropdown always appears correctly.
-  // This extra fetch only runs on first scan – subsequent scans already
-  // have a valid list in cache and skip this block entirely.
-  const zonesEnabled = restaurant.zones && restaurant.zones.enabled;
-
-  if (zonesEnabled) {
-    const list = restaurant.zones.list;
-    const listIsInvalid = !list || !Array.isArray(list) || list.length === 0;
-
-    if (listIsInvalid) {
-      // Only refetch if we haven't already just fetched (prevents infinite loop)
-      const freshResult = await FirebaseDB.getRestaurant(rid);
-      if (freshResult.success) {
-        restaurant = freshResult.data;
-        DB.restaurants[rid] = restaurant;
-        DB.save();
-      }
-    }
-  }
-  // ── END FIX ──────────────────────────────────────────────────────────────
 
   const zonesEnabledFinal = restaurant.zones && restaurant.zones.enabled;
   const zones = zonesEnabledFinal ? (restaurant.zones.list || []) : [];
@@ -366,4 +361,5 @@ function triggerConfetti() {
 
 window.showJoinQueue=showJoinQueue;window.handleJoinQueue=handleJoinQueue;window.showLoadingSuccess=showLoadingSuccess;window.showUpgradeModal=showUpgradeModal;window.showQueueStatus=showQueueStatus;window.initWheelPicker=initWheelPicker;window.playBellSound=playBellSound;window.triggerConfetti=triggerConfetti;
 console.log('✅ QueueApp Queue Module Loaded (with Zone Display + Celebration)');
-console.log('✅ Fix Applied: Zone dropdown now loads correctly on first iPhone scan');
+console.log('✅ Fix 1: Zone dropdown now loads correctly on first iPhone scan (cold start)');
+console.log('✅ Fix 2: Customer join page always fetches fresh Firebase data - stale cache eliminated');
