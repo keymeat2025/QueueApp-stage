@@ -1,8 +1,6 @@
-
 // ============================================================================
-// QUEUEAPP - CORE.JS (FIXED - NO MORE DUPLICATE QUEUE NUMBERS)
+// QUEUEAPP - CORE.JS (3-TIER PRICING: FREE + PREMIUM + PRO)
 // Foundation Layer: Firebase, Database, Utilities, Routing
-// FIX: Atomic sequential queue numbers instead of random numbers
 // ============================================================================
 
 // ============================================================================
@@ -29,7 +27,6 @@ const db = firebase.firestore();
 // ============================================================================
 
 const PLAN_CATALOG = {
-  // Current active plan - Change this single line to switch plans
   ACTIVE_PLAN: 'intro_quarterly',
   
   PLANS: {
@@ -40,6 +37,15 @@ const PLAN_CATALOG = {
       displayName: 'Quarterly Premium',
       displayPrice: '₹1,999 for 3 months',
       description: 'Limited time offer'
+    },
+    
+    pro_quarterly: {
+      id: 'pro_quarterly_2026',
+      duration: 90,
+      price: 2698,
+      displayName: 'Quarterly Pro',
+      displayPrice: '₹2,698 for 3 months',
+      description: 'Premium + WhatsApp Marketing'
     },
     
     monthly: {
@@ -71,19 +77,15 @@ const PLAN_CATALOG = {
   }
 };
 
-// Get currently active plan
 const getActivePlan = () => {
   return PLAN_CATALOG.PLANS[PLAN_CATALOG.ACTIVE_PLAN];
 };
 
-// Calculate total days with smart fallback
 const calculateTotalDays = (restaurant) => {
-  // If planDuration exists, use it
   if (restaurant.planDuration) {
     return restaurant.planDuration;
   }
   
-  // Calculate from existing timestamps
   const start = restaurant.planStartDate || restaurant.uploadedTimestamp;
   const expiry = restaurant.planExpiryDate;
   
@@ -92,33 +94,25 @@ const calculateTotalDays = (restaurant) => {
     return calculatedDays;
   }
   
-  // Final fallback - use active plan duration
   return getActivePlan().duration;
 };
 
-// Generate unique subscription ID
 const generateSubscriptionId = (restaurantId) => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substr(2, 6).toUpperCase();
   return `SUB-${restaurantId}-${timestamp}-${random}`;
 };
 
-// Get or create subscription ID for restaurant
 const getSubscriptionId = (restaurant, rid) => {
-  // If already has subscription ID, return it
   if (restaurant.subscriptionId) {
     return restaurant.subscriptionId;
   }
-  
-  // Generate new one for first time
   return generateSubscriptionId(rid);
 };
 
-// Get next cycle number
 const getNextCycleNumber = (restaurant) => {
   return (restaurant.subscriptionCycleNumber || 0) + 1;
 };
-
 
 // ============================================================================
 // FIREBASE ADMIN WRAPPER
@@ -157,10 +151,19 @@ const FirebaseAdmin = {
 // ============================================================================
 
 /**
- * Check if Premium plan is currently active (not expired)
+ * Check if Premium OR Pro plan is currently active (not expired)
  */
 function isPremiumActive(restaurant) {
-  return restaurant.plan === 'premium'
+  return (restaurant.plan === 'premium' || restaurant.plan === 'pro')
+    && restaurant.planStatus === 'active'
+    && (!restaurant.planExpiryDate || restaurant.planExpiryDate > Date.now());
+}
+
+/**
+ * Check if Pro plan is currently active
+ */
+function isProActive(restaurant) {
+  return restaurant.plan === 'pro'
     && restaurant.planStatus === 'active'
     && (!restaurant.planExpiryDate || restaurant.planExpiryDate > Date.now());
 }
@@ -172,23 +175,19 @@ function calculateMonthlyLimit(restaurant, analytics) {
   const now = Date.now();
   const currentMonth = new Date().toISOString().slice(0, 7);
   
-  // Check if Premium is currently active
   if (isPremiumActive(restaurant)) {
     return { limit: Infinity, display: 'unlimited' };
   }
   
-  // Check if Premium expired mid-month (freemium grace period)
-  if (restaurant.plan === 'premium' && restaurant.planExpiryDate) {
+  if ((restaurant.plan === 'premium' || restaurant.plan === 'pro') && restaurant.planExpiryDate) {
     const expiryMonth = new Date(restaurant.planExpiryDate).toISOString().slice(0, 7);
     
     if (expiryMonth === currentMonth && analytics.customersAtExpiry !== undefined) {
-      // Expired this month: Base usage + 500 freemium
       const freemiumLimit = analytics.customersAtExpiry + 500;
       return { limit: freemiumLimit, display: freemiumLimit };
     }
   }
   
-  // Free plan or new month after expiry
   return { limit: 500, display: 500 };
 }
 
@@ -197,7 +196,6 @@ function calculateMonthlyLimit(restaurant, analytics) {
 // ============================================================================
 
 const FirebaseDB = {
-  // Add new restaurant
   async addRestaurant(rid, data) {
     try {
       const currentMonth = new Date().toISOString().slice(0, 7);
@@ -226,7 +224,6 @@ const FirebaseDB = {
     }
   },
 
-  // Get restaurant by ID
   async getRestaurant(rid) {
     try {
       const doc = await db.collection('restaurants').doc(rid).get();
@@ -238,7 +235,6 @@ const FirebaseDB = {
     }
   },
 
-  // Get all restaurants (platform admin)
   async getAllRestaurants() {
     try {
       const snapshot = await db.collection('restaurants').get();
@@ -252,7 +248,6 @@ const FirebaseDB = {
     }
   },
 
-  // Add customer to queue (FIXED - ATOMIC QUEUE NUMBERS)
   async addToQueue(rid, customer) {
     try {
       const restaurantRef = db.collection('restaurants').doc(rid);
@@ -267,7 +262,6 @@ const FirebaseDB = {
       const today = new Date().toISOString().slice(0, 10);
       const now = Date.now();
       
-      // Initialize or get analytics
       let analytics = restaurant.analytics || {
         currentMonth: currentMonth,
         customersThisMonth: 0,
@@ -275,11 +269,9 @@ const FirebaseDB = {
         dailyStats: {}
       };
       
-      // Reset analytics if new month (FIXED - NO UNDEFINED)
       if (analytics.currentMonth !== currentMonth) {
         const monthlyHistory = restaurant.monthlyHistory || [];
         
-        // Build history entry with only defined fields
         const historyEntry = {
           month: analytics.currentMonth,
           totalCustomers: analytics.customersThisMonth,
@@ -287,7 +279,6 @@ const FirebaseDB = {
           archivedAt: new Date().toISOString()
         };
         
-        // Only add optional fields if they exist
         if (analytics.customersAtExpiry !== undefined) {
           historyEntry.customersAtExpiry = analytics.customersAtExpiry;
         }
@@ -297,39 +288,29 @@ const FirebaseDB = {
         
         monthlyHistory.push(historyEntry);
         
-        // Reset analytics WITHOUT undefined fields
         analytics = {
           currentMonth: currentMonth,
           customersThisMonth: 0,
           lastResetDate: today,
           dailyStats: {}
-          // Don't include customersAtExpiry or expiredAt - let them be absent
         };
         
-        // Update Firestore with clean data
         await restaurantRef.update({
           monthlyHistory: monthlyHistory,
           analytics: analytics
         });
       }
       
-      // ===== EXPIRY SNAPSHOT LOGIC (FIXED) =====
-      // Take snapshot when Premium expires (first customer after expiry)
-      if (restaurant.plan === 'premium' && 
+      if ((restaurant.plan === 'premium' || restaurant.plan === 'pro') && 
           restaurant.planExpiryDate && 
           restaurant.planExpiryDate < now && 
           analytics.customersAtExpiry === undefined) {
         
-        // Check if expiry was this month
         const expiryMonth = new Date(restaurant.planExpiryDate).toISOString().slice(0, 7);
         if (expiryMonth === currentMonth) {
-          // Take snapshot of customers at expiry
           analytics.customersAtExpiry = analytics.customersThisMonth;
           analytics.expiredAt = restaurant.planExpiryDate;
           
-          console.log(`[EXPIRY SNAPSHOT] ${rid}: ${analytics.customersAtExpiry} customers at expiry`);
-          
-          // FIXED: Only update defined fields
           try {
             const snapshotUpdate = {};
             
@@ -340,31 +321,25 @@ const FirebaseDB = {
               snapshotUpdate['analytics.expiredAt'] = analytics.expiredAt;
             }
             
-            // Only update if there are fields to update
             if (Object.keys(snapshotUpdate).length > 0) {
               await restaurantRef.update(snapshotUpdate);
-              console.log(`[EXPIRY SNAPSHOT] Saved successfully`);
             }
           } catch (updateError) {
-            // Log error but don't fail the queue join
             console.error(`[EXPIRY SNAPSHOT ERROR] ${rid}:`, updateError);
           }
         }
       }
       
-      // ===== CALCULATE EFFECTIVE LIMIT =====
       const { limit: effectiveLimit, display: displayLimit } = calculateMonthlyLimit(restaurant, analytics);
       
-      // Check limit
       if (analytics.customersThisMonth >= effectiveLimit) {
-        // Determine appropriate message
         let message;
-        if (restaurant.plan === 'premium' && analytics.customersAtExpiry !== undefined) {
-          message = `Freemium limit reached (${analytics.customersAtExpiry} before expiry + 500 grace). Renew Premium for unlimited customers.`;
+        if ((restaurant.plan === 'premium' || restaurant.plan === 'pro') && analytics.customersAtExpiry !== undefined) {
+          message = `Freemium limit reached (${analytics.customersAtExpiry} before expiry + 500 grace). Renew ${restaurant.plan === 'pro' ? 'Pro' : 'Premium'} for unlimited customers.`;
         } else if (restaurant.plan === 'free') {
           message = 'Monthly limit reached. Upgrade to Premium for unlimited customers.';
         } else {
-          message = 'Monthly limit reached. Renew Premium for unlimited customers.';
+          message = `Monthly limit reached. Renew ${restaurant.plan === 'pro' ? 'Pro' : 'Premium'} for unlimited customers.`;
         }
         
         return {
@@ -376,58 +351,45 @@ const FirebaseDB = {
         };
       }
       
-      // ===== COLLISION-RESISTANT QUEUE NUMBER GENERATION =====
-      // Generate random 4-digit number with collision detection
-      // Range: A-1000 to A-9999 (9000 possible numbers per day)
       let queueNumber;
       let attempts = 0;
       const maxAttempts = 100;
       
       do {
-        // Generate 4-digit random number (1000-9999)
         const random = Math.floor(Math.random() * 9000) + 1000;
         queueNumber = `A-${random}`;
         
-        // Check if this number already exists in today's queue
         const duplicate = restaurant.queue.find(q => q.queueNumber === queueNumber);
         
         if (!duplicate) {
-          break; // Unique number found
+          break;
         }
         
         attempts++;
         
         if (attempts >= maxAttempts) {
-          // Fallback: use timestamp-based guaranteed unique number
           const timestamp = Date.now().toString();
-          const uniqueSuffix = timestamp.slice(-5); // Last 5 digits
+          const uniqueSuffix = timestamp.slice(-5);
           queueNumber = `A-${uniqueSuffix}`;
-          console.warn(`[QUEUE] Max collision attempts reached, using timestamp: ${queueNumber}`);
           break;
         }
       } while (attempts < maxAttempts);
-      
-      console.log(`[QUEUE] Generated unique number: ${queueNumber} (${attempts} collision checks)`);
 
-      // Create queue item (MODIFIED - includes zone field)
       const queueItem = {
         ...customer,
         queueNumber: queueNumber,
         status: 'waiting',
         joinedAt: new Date().toISOString(),
-        zone: customer.zone || null  // ← NEW FIELD (backward compatible)
+        zone: customer.zone || null
       };
       
-      // Increment zone scan count if zone provided (if multizone.js loaded)
       if (customer.zone && typeof incrementZoneScan === 'function') {
         incrementZoneScan(rid, customer.zone);
       }
       
-      // Update analytics
       analytics.customersThisMonth += 1;
       analytics.dailyStats[today] = (analytics.dailyStats[today] || 0) + 1;
       
-      // FIXED: Update Firestore with clean analytics (no undefined)
       await restaurantRef.update({
         queue: firebase.firestore.FieldValue.arrayUnion(queueItem),
         analytics: analytics
@@ -445,7 +407,6 @@ const FirebaseDB = {
     }
   },
 
-  // Allocate table to customer
   async allocateTable(rid, queueNumber, tableNo) {
     try {
       const result = await this.getRestaurant(rid);
@@ -464,7 +425,6 @@ const FirebaseDB = {
     }
   },
 
-  // Get analytics
   async getAnalytics(rid) {
     try {
       const doc = await db.collection('restaurants').doc(rid).get();
@@ -482,7 +442,6 @@ const FirebaseDB = {
     }
   },
 
-  // Daily cleanup (delegates to archival.js)
   dailyCleanup: (rid, isManual = false) => {
     if (window.FirebaseCleanup) {
       return window.FirebaseCleanup.dailyCleanup(rid, isManual);
@@ -490,7 +449,6 @@ const FirebaseDB = {
     return Promise.resolve({ success: false, error: 'Cleanup module not loaded' });
   },
 
-  // Save payment proof
   async savePaymentProof(rid, paymentData) {
     try {
       await db.collection('restaurants').doc(rid).update({
@@ -506,33 +464,31 @@ const FirebaseDB = {
     }
   },
 
- 
-  
-  // Approve premium
   async approvePremium(rid, approvalData) {
     try {
-      const activePlan = getActivePlan();
-      
-      // ✅ STACK-TIME CALCULATION: Check if renewing before expiry
       const doc = await db.collection('restaurants').doc(rid).get();
       const restaurantData = doc.exists ? doc.data() : null;
+      const paymentProof = restaurantData?.paymentProof || {};
+      
+      // Get plan type from payment proof (premium or pro)
+      const planType = paymentProof.planType || 'premium';
+      const activePlan = planType === 'pro' ? PLAN_CATALOG.PLANS.pro_quarterly : getActivePlan();
+      
       const now = Date.now();
       const currentExpiry = restaurantData?.planExpiryDate;
       
       let startDate, expiryDate;
       
       if (currentExpiry && currentExpiry > now) {
-        // Renewing BEFORE expiry - Stack time (add 90 days to current expiry)
         startDate = currentExpiry;
         expiryDate = currentExpiry + (activePlan.duration * 24 * 60 * 60 * 1000);
       } else {
-        // First time OR expired - Start immediately
         startDate = now;
         expiryDate = now + (activePlan.duration * 24 * 60 * 60 * 1000);
       }
       
       const updateData = {
-        plan: 'premium',
+        plan: planType, // 'premium' or 'pro'
         planStatus: 'active',
         planType: activePlan.id,
         planDuration: activePlan.duration,
@@ -554,7 +510,6 @@ const FirebaseDB = {
     }
   },
 
-  // Reject premium
   async rejectPremium(rid, reason, rejectionData) {
     try {
       const updateData = {
@@ -577,7 +532,7 @@ const FirebaseDB = {
 };
 
 // ============================================================================
-// LOCAL STORAGE DATABASE (BACKUP) - FIXED
+// LOCAL STORAGE DATABASE (BACKUP)
 // ============================================================================
 
 const DB = {
@@ -627,11 +582,9 @@ const DB = {
       };
     }
     
-    // Reset analytics if new month (FIXED - NO UNDEFINED)
     if (restaurant.analytics.currentMonth !== currentMonth) {
       if (!restaurant.monthlyHistory) restaurant.monthlyHistory = [];
       
-      // Build history entry with only defined fields
       const historyEntry = {
         month: restaurant.analytics.currentMonth,
         totalCustomers: restaurant.analytics.customersThisMonth
@@ -646,7 +599,6 @@ const DB = {
       
       restaurant.monthlyHistory.push(historyEntry);
       
-      // Reset WITHOUT undefined fields
       restaurant.analytics = {
         currentMonth: currentMonth,
         customersThisMonth: 0,
@@ -655,8 +607,7 @@ const DB = {
       };
     }
     
-    // Take expiry snapshot (FIXED)
-    if (restaurant.plan === 'premium' && 
+    if ((restaurant.plan === 'premium' || restaurant.plan === 'pro') && 
         restaurant.planExpiryDate && 
         restaurant.planExpiryDate < now && 
         restaurant.analytics.customersAtExpiry === undefined) {
@@ -668,16 +619,12 @@ const DB = {
       }
     }
     
-    // Calculate effective limit
     const { limit: effectiveLimit } = calculateMonthlyLimit(restaurant, restaurant.analytics);
     
-    // Check limit
     if (restaurant.analytics.customersThisMonth >= effectiveLimit) {
       return null;
     }
     
-    // ===== COLLISION-RESISTANT QUEUE NUMBER (LOCAL STORAGE VERSION) =====
-    // Range: A-1000 to A-9999 (9000 possible numbers per day)
     let queueNumber;
     let attempts = 0;
     const maxAttempts = 100;
@@ -707,7 +654,7 @@ const DB = {
       queueNumber: queueNumber,
       status: 'waiting',
       joinedAt: new Date().toISOString(),
-      zone: customer.zone || null  // ← NEW FIELD
+      zone: customer.zone || null
     });
     
     restaurant.analytics.customersThisMonth += 1;
@@ -749,25 +696,24 @@ const DB = {
   approvePremium(rid) {
     const restaurant = this.restaurants[rid];
     if (restaurant) {
-      const activePlan = getActivePlan();
+      const paymentProof = restaurant.paymentProof || {};
+      const planType = paymentProof.planType || 'premium';
+      const activePlan = planType === 'pro' ? PLAN_CATALOG.PLANS.pro_quarterly : getActivePlan();
       
-      // ✅ STACK-TIME CALCULATION: Check if renewing before expiry
       const now = Date.now();
       const currentExpiry = restaurant.planExpiryDate;
       
       let startDate, expiryDate;
       
       if (currentExpiry && currentExpiry > now) {
-        // Renewing BEFORE expiry - Stack time (add 90 days to current expiry)
         startDate = currentExpiry;
         expiryDate = currentExpiry + (activePlan.duration * 24 * 60 * 60 * 1000);
       } else {
-        // First time OR expired - Start immediately
         startDate = now;
         expiryDate = now + (activePlan.duration * 24 * 60 * 60 * 1000);
       }
       
-      restaurant.plan = 'premium';
+      restaurant.plan = planType; // 'premium' or 'pro'
       restaurant.planStatus = 'active';
       restaurant.planType = activePlan.id;
       restaurant.planDuration = activePlan.duration;
@@ -806,7 +752,6 @@ const DB = {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-// Check internet connection
 const checkInternet = () => {
   if (!navigator.onLine) {
     alert('⚠️ No Internet Connection\n\nPlease connect to the internet to continue.');
@@ -815,12 +760,10 @@ const checkInternet = () => {
   return true;
 };
 
-// Get today's QR code URL
 const getTodayQRCode = (rid) => {
   return `${window.location.origin}/#/r/${rid}/join`;
 };
 
-// Generate QR code with responsive sizing
 const generateQRCode = (elementId, rid) => {
   const element = document.getElementById(elementId);
   if (!element) return;
@@ -852,7 +795,6 @@ const generateQRCode = (elementId, rid) => {
   });
 };
 
-// Get currently logged in restaurant
 const getLoggedInRest = () => {
   for (let id of Object.keys(DB.restaurants)) {
     if (sessionStorage.getItem(`loggedIn_${id}`)) {
@@ -865,7 +807,6 @@ const getLoggedInRest = () => {
   return null;
 };
 
-// Navigate to home (either landing or admin dashboard)
 const navigateHome = () => {
   const loggedIn = getLoggedInRest();
   if (loggedIn) {
@@ -875,17 +816,14 @@ const navigateHome = () => {
   }
 };
 
-// Render HTML to app container
 const render = (html) => {
   document.getElementById('app').innerHTML = html;
 };
 
-// Navigate to route
 const navigate = (path) => {
   window.location.hash = path;
 };
 
-// Toggle mobile menu
 const toggleMobileMenu = () => {
   const menu = document.querySelector('.nav-buttons.mobile-menu');
   if (menu) {
@@ -897,7 +835,6 @@ const toggleMobileMenu = () => {
 // GLOBAL STATE MANAGEMENT
 // ============================================================================
 
-// Listener cleanup variables (used by admin/display modules)
 let platformAdminListener = null;
 let adminUnsubscribe = null;
 let displayUnsubscribe = null;
@@ -912,6 +849,7 @@ window.FirebaseAdmin = FirebaseAdmin;
 window.FirebaseDB = FirebaseDB;
 window.DB = DB;
 window.isPremiumActive = isPremiumActive;
+window.isProActive = isProActive;
 window.calculateMonthlyLimit = calculateMonthlyLimit;
 window.checkInternet = checkInternet;
 window.getTodayQRCode = getTodayQRCode;
@@ -922,7 +860,6 @@ window.render = render;
 window.navigate = navigate;
 window.toggleMobileMenu = toggleMobileMenu;
 
-// Export global state variables
 window.platformAdminListener = platformAdminListener;
 window.adminUnsubscribe = adminUnsubscribe;
 window.displayUnsubscribe = displayUnsubscribe;
@@ -935,5 +872,4 @@ window.generateSubscriptionId = generateSubscriptionId;
 window.getSubscriptionId = getSubscriptionId;
 window.getNextCycleNumber = getNextCycleNumber;
 
-console.log('✅ QueueApp Core Module Loaded (FIXED - Collision Detection)');
-console.log('✅ Bug Fix: Random numbers with collision detection prevent duplicates');
+console.log('✅ QueueApp Core Module Loaded (3-Tier Pricing: Free + Premium + Pro)');
