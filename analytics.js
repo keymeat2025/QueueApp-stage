@@ -19,8 +19,8 @@ function validatePremiumAccess(rid, functionName = 'analytics') {
         showPremiumAccessDenied(rid, 'Restaurant not found');
         return false;
     }
-    
-    if (r.plan !== 'premium') {
+  
+    if (r.plan !== 'premium' && r.plan !== 'pro') {
         console.warn(`[SECURITY] Blocked ${functionName} - User has ${r.plan} plan (Premium required)`);
         showPremiumAccessDenied(rid, `${functionName} requires Premium subscription`);
         return false;
