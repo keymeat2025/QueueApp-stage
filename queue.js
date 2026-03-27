@@ -270,8 +270,6 @@ async function showQueueStatus(rid, queueNumber) {
                 </div>
               </div>
               <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-                
-                <button onclick="navigate('/r/${rid}/admin')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success)">← Dashboard</button>
                 <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--success)">📺 Display</button>
               </div>
             </div>
@@ -306,8 +304,6 @@ async function showQueueStatus(rid, queueNumber) {
                 </div>
               </div>
               <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-                
-                <button onclick="navigate('/r/${rid}/admin')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--primary)">← Dashboard</button>
                 <button onclick="navigate('/r/${rid}/display/${queueNumber}')" class="btn btn-secondary" style="font-size:.875rem;padding:.5rem 1rem;background:white;color:var(--primary)">📺 Display</button>
               </div>
             </div>
