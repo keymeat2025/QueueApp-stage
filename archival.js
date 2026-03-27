@@ -27,7 +27,8 @@ window.FirebaseCleanup = {
         if (r.lastCleanupDate === td) return { success: false, error: 'Already cleaned today' };
         
         // ===== UPDATED: Check if Premium is ACTIVE (not expired) =====
-        const isPremiumActive = r.plan === 'premium' || r.plan === 'pro')
+        //const isPremiumActive = r.plan === 'premium' || r.plan === 'pro')
+        const isPremiumActive = ((r.plan === 'premium' || r.plan === 'pro')  
           && r.planStatus === 'active'
           && (!r.planExpiryDate || r.planExpiryDate > Date.now());
         
@@ -164,7 +165,8 @@ window.LocalStorageCleanup = {
     if (r.lastCleanupDate === td) return { success: false, error: 'Already cleaned today' };
     
     // ===== UPDATED: Check if Premium is ACTIVE (not expired) =====
-    const isPremiumActive = r.plan === 'premium' || r.plan === 'pro')
+    //const isPremiumActive = r.plan === 'premium' || r.plan === 'pro')
+    const isPremiumActive = ((r.plan === 'premium' || r.plan === 'pro') 
       && r.planStatus === 'active'
       && (!r.planExpiryDate || r.planExpiryDate > Date.now());
     
