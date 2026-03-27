@@ -328,6 +328,24 @@ function showLegal(t,c){render(`<div style="min-height:100vh;background:var(--gr
 
 FirebaseAdmin.onAuthStateChanged(u=>{if(u){if(sessionStorage.getItem('adminAuth')!=='yes'){sessionStorage.setItem('adminAuth','yes');sessionStorage.setItem('adminEmail',u.email)}}else{if(sessionStorage.getItem('adminAuth')==='yes'){sessionStorage.removeItem('adminAuth');sessionStorage.removeItem('adminEmail')}}});
 
+  // ============================================================================
+// PLAN MANAGEMENT FUNCTIONS
+// ============================================================================
+
+function handlePlanUpgrade(restaurantId, planType, amount) {
+  sessionStorage.setItem('selected_plan', planType);
+  sessionStorage.setItem('selected_amount', amount);
+  handleUpgrade(restaurantId);
+}
+
+function handleDowngrade(restaurantId, targetPlan) {
+  if (!confirm(`Switch to ${targetPlan.charAt(0).toUpperCase() + targetPlan.slice(1)} plan? You'll lose WhatsApp Ads features.`)) {
+    return;
+  }
+  sessionStorage.setItem('selected_plan', targetPlan);
+  sessionStorage.setItem('selected_amount', targetPlan === 'premium' ? 1999 : 2698);
+  handleUpgrade(restaurantId);
+}
 // ============================================================================
 // INITIALIZE APP
 // ============================================================================
