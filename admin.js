@@ -68,7 +68,7 @@ async function connectWhatsApp(rid) {
   btn.textContent = '⏳ Connecting...';
   btn.disabled = true;
   try {
-    const getMetaOAuthURL = firebase.functions().httpsCallable('getMetaOAuthURL');
+    const getMetaOAuthURL = firebase.app().functions('asia-south1').httpsCallable('getMetaOAuthURL');
     const result = await getMetaOAuthURL({ rid: rid });
     const oauthUrl = result.data.url;
     const popup = window.open(oauthUrl, 'whatsapp_connect', 'width=600,height=700,scrollbars=yes,resizable=yes');
@@ -148,7 +148,7 @@ async function showWAStatusModal(rid) {
 async function confirmDisconnectWA(rid) {
   if (!confirm('Disconnect WhatsApp?\n\nThis will stop all automated WA messages.\nYou can reconnect anytime.')) return;
   try {
-    const disconnectWhatsApp = firebase.functions().httpsCallable('disconnectWhatsApp');
+    const disconnectWhatsApp = firebase.app().functions('asia-south1').httpsCallable('disconnectWhatsApp');
     await disconnectWhatsApp({ rid: rid });
     document.getElementById('waStatusModal')?.remove();
     alert('WhatsApp disconnected. All automations paused.');
