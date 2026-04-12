@@ -68,29 +68,66 @@ async function connectWhatsApp(rid) {
   btn.textContent = '⏳ Connecting...';
   btn.disabled = true;
   try {
-    const getMetaOAuthURL = firebase.app().functions('asia-south1').httpsCallable('getMetaOAuthURL');
+    // Check Firebase Functions SDK is loaded
+    if (!firebase.functions) {
+      throw new Error('Firebase Functions SDK not loaded. Add firebase-functions-compat.js to index.html');
+    }
+
+    console.log('[WA Connect] Step 1: Calling getMetaOAuthURL for rid:', rid);
+
+    const functions = firebase.app().functions('asia-south1');
+    const getMetaOAuthURL = functions.httpsCallable('getMetaOAuthURL');
     const result = await getMetaOAuthURL({ rid: rid });
+
+    console.log('[WA Connect] Step 2: Cloud Function response:', JSON.stringify(result.data));
+
     const oauthUrl = result.data.url;
+
+    console.log('[WA Connect] Step 3: OAuth URL generated:');
+    console.log(oauthUrl);
+
+    // Break down URL params for easy reading
+    try {
+      const urlObj = new URL(oauthUrl);
+      console.log('[WA Connect] URL params:');
+      urlObj.searchParams.forEach((val, key) => {
+        console.log('  ' + key + ' = ' + val);
+      });
+    } catch(e) {}
+
+    console.log('[WA Connect] Step 4: Opening popup...');
+
     const popup = window.open(oauthUrl, 'whatsapp_connect', 'width=600,height=700,scrollbars=yes,resizable=yes');
+
     if (!popup) {
+      console.log('[WA Connect] Popup blocked — redirecting in same tab');
       window.location.href = oauthUrl;
       return;
     }
+
+    console.log('[WA Connect] Step 5: Popup opened. Polling for close...');
+
     const pollTimer = setInterval(async () => {
       if (popup.closed) {
         clearInterval(pollTimer);
+        console.log('[WA Connect] Step 6: Popup closed. Checking Firestore for wa_connected...');
         const doc = await db.collection('restaurants').doc(rid).get();
         const data = doc.data();
+        console.log('[WA Connect] Step 7: wa_connected =', data?.wa_connected, '| wa_phone =', data?.wa_phone);
         if (data && data.wa_connected) {
           alert('✅ WhatsApp Connected!\n\nNumber: ' + (data.wa_phone || 'Active') + '\n\nTransactional messages (queue join, table ready, post-visit rating) will now be sent automatically.');
         } else {
+          console.log('[WA Connect] wa_connected is false — user may have cancelled or OAuth failed');
           btn.textContent = '📲 Connect WA';
           btn.disabled = false;
         }
       }
     }, 1000);
   } catch (err) {
-    console.error('[WA Connect] Error:', err);
+    console.error('[WA Connect] ❌ Error at step:', err);
+    console.error('[WA Connect] Error message:', err.message);
+    console.error('[WA Connect] Error code:', err.code);
+    console.error('[WA Connect] Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
     alert('❌ Connection failed. Please try again.\n\n' + err.message);
     btn.textContent = '📲 Connect WA';
     btn.disabled = false;
@@ -148,7 +185,8 @@ async function showWAStatusModal(rid) {
 async function confirmDisconnectWA(rid) {
   if (!confirm('Disconnect WhatsApp?\n\nThis will stop all automated WA messages.\nYou can reconnect anytime.')) return;
   try {
-    const disconnectWhatsApp = firebase.app().functions('asia-south1').httpsCallable('disconnectWhatsApp');
+    const functions = firebase.app().functions('asia-south1');
+    const disconnectWhatsApp = functions.httpsCallable('disconnectWhatsApp');
     await disconnectWhatsApp({ rid: rid });
     document.getElementById('waStatusModal')?.remove();
     alert('WhatsApp disconnected. All automations paused.');
