@@ -105,19 +105,45 @@ async function connectWhatsApp(rid) {
       return;
     }
 
-    console.log('[WA Connect] Step 5: Popup opened. Polling for close...');
+    console.log('[WA Connect] Step 5: Popup opened. Listening for completion...');
 
+    // Listen for postMessage from OAuth callback page
+    const messageHandler = async (event) => {
+      console.log('[WA Connect] postMessage received:', event.data);
+      if (event.data && event.data.type === 'WA_CONNECTED') {
+        window.removeEventListener('message', messageHandler);
+        clearInterval(pollTimer);
+        console.log('[WA Connect] ✅ WA_CONNECTED message received. Phone:', event.data.phone);
+        // Give Firestore a moment to update
+        await new Promise(r => setTimeout(r, 2000));
+        const doc = await db.collection('restaurants').doc(rid).get();
+        const data = doc.data();
+        console.log('[WA Connect] Firestore wa_connected =', data?.wa_connected);
+        if (data && data.wa_connected) {
+          alert('✅ WhatsApp Connected!\n\nNumber: ' + (data.wa_phone || event.data.phone || 'Active') + '\n\nTransactional messages will now be sent automatically for Pro customers.');
+        } else {
+          btn.textContent = '📲 Connect WA';
+          btn.disabled = false;
+        }
+      }
+    };
+    window.addEventListener('message', messageHandler);
+
+    // Also poll as fallback in case postMessage doesn't fire
     const pollTimer = setInterval(async () => {
       if (popup.closed) {
         clearInterval(pollTimer);
-        console.log('[WA Connect] Step 6: Popup closed. Checking Firestore for wa_connected...');
+        console.log('[WA Connect] Popup closed. Checking Firestore...');
+        await new Promise(r => setTimeout(r, 1500));
         const doc = await db.collection('restaurants').doc(rid).get();
         const data = doc.data();
-        console.log('[WA Connect] Step 7: wa_connected =', data?.wa_connected, '| wa_phone =', data?.wa_phone);
+        console.log('[WA Connect] wa_connected =', data?.wa_connected, '| wa_phone =', data?.wa_phone);
         if (data && data.wa_connected) {
-          alert('✅ WhatsApp Connected!\n\nNumber: ' + (data.wa_phone || 'Active') + '\n\nTransactional messages (queue join, table ready, post-visit rating) will now be sent automatically.');
+          window.removeEventListener('message', messageHandler);
+          alert('✅ WhatsApp Connected!\n\nNumber: ' + (data.wa_phone || 'Active') + '\n\nTransactional messages will now be sent automatically.');
         } else {
-          console.log('[WA Connect] wa_connected is false — user may have cancelled or OAuth failed');
+          console.log('[WA Connect] Not connected — user may have cancelled');
+          window.removeEventListener('message', messageHandler);
           btn.textContent = '📲 Connect WA';
           btn.disabled = false;
         }
