@@ -91,13 +91,14 @@ async function connectWhatsApp(rid) {
     FB.login(function(response) {
       console.log('[WA Connect] FB.login response:', JSON.stringify(response));
 
-      if (response.authResponse && response.authResponse.code) {
-        const code = response.authResponse.code;
+
+      if (response.authResponse && response.authResponse.accessToken) {
+        const code = response.authResponse.accessToken;
         console.log('[WA Connect] Step 5: Got auth code. Calling callback...');
 
         // Call our Cloud Function with the code
         const callbackUrl = 'https://asia-south1-queueapp-97728.cloudfunctions.net/handleMetaOAuthCallback' +
-          '?code=' + encodeURIComponent(code) +
+          '?access_token=' + encodeURIComponent(code) +
           '&state=' + rid;
 
         fetch(callbackUrl)
@@ -127,8 +128,8 @@ async function connectWhatsApp(rid) {
       }
     }, {
       config_id: configId,
-      response_type: 'code',
-      override_default_response_type: true,
+      response_type: 'token',
+      //override_default_response_type: true,
       extras: {
         setup: {},
         featureType: '',
